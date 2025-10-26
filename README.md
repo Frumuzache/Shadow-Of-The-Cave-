@@ -1,30 +1,10 @@
-# Nu primesc notă pentru că nu am pus titlu și descriere
+# Shadow Of The Cave - The Game 
 
-### Folosiți template-ul corespunzător grupei voastre!
+In acest joc sunteti un triunghi (hopefully not, vedem daca pot crea un caracter mai bun) ce se afla intr-o pestera ce este compusa dintr-un sistem de camere generate diferit la fiecare joc. Pentru a progrsa in alta camera trebuie sa omorati toti inamicii din camera in care va aflati. Pentru a castiga trebuie sa explorati si sa curatati toate camerele. Fiecare inamic omorat, jucatorul va primi monezi pe care le poate folosi pentru a cumpara diferite tipuri de arme si diferite abilitati. De asemenea, pe harta se vor putea genra si crate-uri care vor putea oferi bani sau diferite iteme. 
 
-| Laborant  | Link template                                |
-|-----------|----------------------------------------------|
-| Dragoș B  | https://github.com/Ionnier/oop-template      |
-| Tiberiu M | https://github.com/MaximTiberiu/oop-template |
-| Marius MC | https://github.com/mcmarius/oop-template     |
+# Acknowledgement
 
-### Important!
-
-Aveți voie cu cod generat de modele de limbaj la care nu ați contribuit semnificativ doar dacă documentați riguros acest proces.
-Codul generat pus "ca să fie"/pe care nu îl înțelegeți se punctează doar pentru puncte bonus, doar în contextul
-în care oferă funcționalități ajutătoare și doar dacă are sens.
-
-Codul din proiect trebuie să poată fi ușor de înțeles și de modificat de către altcineva. Pentru detalii, veniți la ore.
-
-O cerință nu se consideră îndeplinită dacă este realizată doar prin cod generat.
-
-- **Fără cod de umplutură/fără sens!**
-- **Fără copy-paste!**
-- **Fără variabile globale!**
-- **Fără atribute publice!**
-- **Pentru T2 și T3, fără date în cod!** Datele vor fi citite din fișier, aveți exemple destule.
-- **Obligatoriu** fișiere cu date mai multe din care să citiți, obligatoriu cu biblioteci externe: fișiere (local sau server) sau baze de date
-- obligatoriu (TBD) să integrați cel puțin două biblioteci externe pe lângă cele pentru stocare
+Ideea acestui joc se bazeaza pe cea a lui DaniDev, prezentata in acest videoclip: https://www.youtube.com/watch?v=YMWnwBpUgoI&t=1s
 
 ### Tema 0
 
