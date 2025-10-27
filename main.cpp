@@ -1,5 +1,6 @@
 #include <iostream>
 #include <array>
+#include "Headers/Weapons.h"
 
 int main() {
     std::cout << "Hello, world!\n";
