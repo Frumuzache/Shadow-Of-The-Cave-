@@ -8,6 +8,7 @@ int main() {
     std::cout << "Introduceți nr: ";
 
     ///TEST COMMIT DIN CLION
+    ///TEST COMMIT CLION 2 -> DE PE LAPTOP 2
 
     /////////////////////////////////////////////////////////////////////////
     /// Observație: dacă aveți nevoie să citiți date de intrare de la tastatură,
