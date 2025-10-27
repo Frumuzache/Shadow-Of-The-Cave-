@@ -19,6 +19,10 @@ include(cmake/Options.cmake)
 include(cmake/CompilerFlags.cmake)
 include(cmake/CopyHelper.cmake)
 
+find_package(SFML COMPONENTS Graphics Window System Audio REQUIRED)
+
+
+
 ###############################################################################
 
 # external dependencies with FetchContent
@@ -55,6 +59,15 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         Headers/Player.h
 )
 
+target_link_libraries(${MAIN_EXECUTABLE_NAME}
+        PRIVATE
+        SFML::Graphics
+        SFML::Window
+        SFML::System
+        SFML::Audio
+)
+
+
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
 set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
@@ -80,5 +93,6 @@ if(APPLE)
 endif()
 
 copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
+copy_files(DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 # copy_files(FILES tastatura.txt config.json DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 # copy_files(DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
