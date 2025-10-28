@@ -1,11 +1,13 @@
 #include <iostream>
+#include <cmath>
 #include <array>
-#include <variant> // <-- Add this include for std::get_if
+#include <variant>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Audio.hpp>
+
 
 #include "Headers/Weapons.h"
 #include "Headers/Player.h"
@@ -18,37 +20,63 @@ int main() {
     // Create the main window
     sf::RenderWindow window(sf::VideoMode({800, 600}), "SFML window");
 
-    // Load a sprite to display
-    const sf::Texture texture("assets/cute_image.jpg");
-    sf::Sprite sprite(texture);
+    sf::Texture backgroundTexture;
+    if (!backgroundTexture.loadFromFile("assets/background.png"))
+    {
+        return -1; // Error
+    }
 
-    // Create a graphical text to display
-    const sf::Font font("assets/arial.ttf");
-    sf::Text text(font, "Hello SFML", 50);
-    text.setFillColor(sf::Color::Green);
+    sf::Sprite background(backgroundTexture);
+
+    sf::Texture playerTexture;
+    if (!playerTexture.loadFromFile("assets/player.png"))
+    {
+        return -1; // Error
+    }
+
+    sf::Vector2f initialPosition(400.f, 300.f);
+    sf::Sprite player(playerTexture);
+    player.setPosition(initialPosition);
 
 
-    // Start the game loop
+    const float speed = 250.f; // pixels per second
+    sf::Clock clock;
+
     while (window.isOpen())
     {
-        // Process events
-        while (const std::optional event = window.pollEvent())
+        while (auto event = window.pollEvent())
         {
-            // Close window: exit
             if (event->is<sf::Event::Closed>())
+            {
                 window.close();
+            }
         }
 
-        // Clear screen
+        float dt = clock.restart().asSeconds();
+
+        sf::Vector2f movement(0.f, 0.f);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+            movement.y -= 1.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+            movement.y += 1.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+            movement.x -= 1.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+            movement.x += 1.f;
+
+        // Normalize so diagonal movement isn't faster
+        if (movement.x != 0.f || movement.y != 0.f) {
+            float len = std::sqrt(movement.x * movement.x + movement.y * movement.y);
+            movement.x = (movement.x / len) * speed * dt;
+            movement.y = (movement.y / len) * speed * dt;
+            player.move(movement);
+        }
+
         window.clear();
 
-        // Draw the sprite
-        window.draw(sprite);
+        window.draw(background); // Draw background FIRST
+        window.draw(player);     // Draw player SECOND (on top)
 
-        // Draw the string
-        window.draw(text);
-
-        // Update the window
         window.display();
     }
     return 0;
