@@ -54,9 +54,12 @@ find_package(SFML COMPONENTS Graphics Window System Audio REQUIRED)
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
 add_executable(${MAIN_EXECUTABLE_NAME}
     main.cpp
-        Headers/Weapons.h
-        Headers/Enemy.h
-        Headers/Player.h
+        header/Weapons.h
+        header/Enemy.h
+        header/Player.h
+        header/Game.h
+        source/Game.cpp
+        source/Player.cpp
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME}
