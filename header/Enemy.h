@@ -1,31 +1,29 @@
 #ifndef ENEMY_H
 #define ENEMY_H
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Window/Window.hpp>
+
 #include "Weapons.h"
 
 class Enemy {
 private:
-    float maxHealth;
-    float currentHealth;
-    float movementSpeed;
-    Weapons* equippedWeapon;
+    sf::Texture eTexture;
+    sf::Sprite eSprite;
+    float eMovementSpeed;
 
 public:
-    Enemy(float maxHealth, float movementSpeed, Weapons* weapon)
-        : maxHealth(maxHealth), currentHealth(maxHealth), movementSpeed(movementSpeed), equippedWeapon(weapon) {}
+    Enemy();
 
-    void takeDamage(float damage) {}
+    void updateMovement(sf::Time deltaTime, const sf::Window& window);
 
-    bool isAlive() const {}
+    void updateHealth(sf::Time deltaTime);
 
-    float getCurrentHealth() const {}
+    void update(sf::Time deltaTime, const sf::Window& window);
 
-    float getMaxHealth() const {}
+    void render(sf::RenderWindow& window) const;
 
-    float getMovementSpeed() const {}
-
-    Weapons* getEquippedWeapon() const {}
 };
-
-
 
 #endif //ENEMY_H

@@ -60,6 +60,7 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         header/Game.h
         source/Game.cpp
         source/Player.cpp
+        source/Enemy.cpp
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME}
@@ -90,6 +91,7 @@ set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
 
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
 # DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
+
 install(TARGETS ${MAIN_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
     install(FILES launcher.command DESTINATION ${DESTINATION_DIR})

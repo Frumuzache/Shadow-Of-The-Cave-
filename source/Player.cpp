@@ -1,7 +1,7 @@
 #include "../header/Player.h"
 #include <cmath>
 #include <iostream>
-
+#include "../header/Game.h"
 
 // Constructor
 Player::Player()
@@ -27,7 +27,7 @@ Player::Player()
 
 
 // Update the player's logic (input and movement)
-void Player::update(sf::Time deltaTime)
+void Player::updateMovement(sf::Time deltaTime, const sf::Window& mWindow)
 {
 
     sf::Vector2f movement(0.f, 0.f);
@@ -58,6 +58,42 @@ void Player::update(sf::Time deltaTime)
 
     // Apply the movement, scaled by speed and delta time
     mSprite.move(movement);
+
+
+    // Border collision (keep player within window bounds)
+
+    sf::Vector2f position = mSprite.getPosition();
+    sf::Vector2u windowSize = mWindow.getSize();
+    sf::Vector2u spriteSize = mTexture.getSize();
+
+    if (position.x < 0.f)
+        position.x = 0.f;
+
+    if (position.y < 0.f)
+        position.y = 0.f;
+
+    if (position.x + spriteSize.x > windowSize.x)
+        position.x = windowSize.x - spriteSize.x;
+
+    if (position.y + spriteSize.y > windowSize.y)
+        position.y = windowSize.y - spriteSize.y;
+
+    mSprite.setPosition(position);
+
+}
+
+
+
+
+void Player::updateHealth(sf::Time deltaTime) {
+    // Placeholder for health update logic
+}
+
+
+void Player::update(sf::Time deltaTime, const sf::Window& mWindow)
+{
+    updateMovement(deltaTime, mWindow);
+    updateHealth(deltaTime);
 }
 
 

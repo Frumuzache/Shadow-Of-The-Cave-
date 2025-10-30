@@ -10,6 +10,10 @@ public:
     Game();
     void run();
 
+    sf::Vector2u getWindowSize() {
+        return mWindow.getSize();
+    }
+
 private:
     void processEvents();
     void update(sf::Time deltaTime);

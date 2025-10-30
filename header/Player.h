@@ -11,8 +11,12 @@ private:
 public:
     Player();
 
-    // Handle player-specific input and movement
-    void update(sf::Time deltaTime);
+    void updateMovement(sf::Time deltaTime, const sf::Window& window);
+
+    void updateHealth(sf::Time deltaTime);
+
+
+    void update(sf::Time deltaTime, const sf::Window& window);
 
     // Draw the player to a window
     void render(sf::RenderWindow& window) const;

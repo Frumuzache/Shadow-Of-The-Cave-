@@ -25,7 +25,6 @@ Game::Game()
 
 
 
-
 // The main run function
 void Game::run()
 {
@@ -67,7 +66,7 @@ void Game::processEvents()
 
 // Function to update the game state
 void Game::update(sf::Time deltaTime) {
-    mPlayer.update(deltaTime);
+    mPlayer.update(deltaTime, mWindow);
 
 }
 
