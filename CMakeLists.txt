@@ -61,6 +61,8 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         source/Game.cpp
         source/Player.cpp
         source/Enemy.cpp
+        header/Entity.h
+        source/Entity.cpp
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME}

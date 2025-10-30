@@ -7,6 +7,7 @@
 // Constructor
 Game::Game()
     : mPlayer{},
+    mEnemy(100.f, 600.f, 400.f),
     mBackgroundTexture{},
     mBackgroundSprite(mBackgroundTexture),
     mWindow(sf::VideoMode({800, 600}), "Shadow Of The Cave"),
@@ -67,6 +68,7 @@ void Game::processEvents()
 // Function to update the game state
 void Game::update(sf::Time deltaTime) {
     mPlayer.update(deltaTime, mWindow);
+    mEnemy.update(deltaTime,mWindow);
 
 }
 
@@ -85,6 +87,9 @@ void Game::render()
 
     // Draw the player
     mPlayer.render(mWindow);
+
+    // Draw the enemy
+    mEnemy.render(mWindow);
 
     // Display what was drawn to the screen
     mWindow.display();

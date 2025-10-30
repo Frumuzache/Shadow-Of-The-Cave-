@@ -1,26 +1,26 @@
 #ifndef PLAYER_H
 #define PLAYER_H
-#include <SFML/Graphics.hpp>
 
-class Player {
-private:
-    sf::Texture mTexture;
-    sf::Sprite mSprite;
-    float mMovementSpeed;
+#include "Entity.h" // <-- Include the new base class
 
+// Player "is-an" Entity
+class Player : public Entity {
 public:
     Player();
 
-    void updateMovement(sf::Time deltaTime, const sf::Window& window);
+    // "override" tells the compiler we are implementing
+    // the pure virtual function from our parent (Entity)
+    void update(sf::Time deltaTime, const sf::Window& window) override;
 
+    // render() is now inherited from Entity!
+
+private:
+    // These functions are specific to the Player's update
+    void updateMovement(sf::Time deltaTime, const sf::Window& window);
     void updateHealth(sf::Time deltaTime);
 
-
-    void update(sf::Time deltaTime, const sf::Window& window);
-
-    // Draw the player to a window
-    void render(sf::RenderWindow& window) const;
-
+    // mTexture, mSprite, and mMovementSpeed are
+    // now inherited from Entity!
 };
 
 #endif //PLAYER_H

@@ -1,29 +1,25 @@
 #ifndef ENEMY_H
 #define ENEMY_H
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Graphics/Sprite.hpp>
-#include <SFML/Graphics/Texture.hpp>
-#include <SFML/Window/Window.hpp>
 
-#include "Weapons.h"
+#include "Entity.h" // <-- Include the base class
 
-class Enemy {
-private:
-    sf::Texture eTexture;
-    sf::Sprite eSprite;
-    float eMovementSpeed;
-
+// Enemy also "is-an" Entity
+class Enemy : public Entity {
 public:
-    Enemy();
+    // Constructor takes its patrol area
+    Enemy(float leftBound, float rightBound, float yPos);
 
-    void updateMovement(sf::Time deltaTime, const sf::Window& window);
+    // It must also implement the virtual update function
+    void update(sf::Time deltaTime, const sf::Window& window) override;
 
-    void updateHealth(sf::Time deltaTime);
+    // render() is inherited from Entity
 
-    void update(sf::Time deltaTime, const sf::Window& window);
-
-    void render(sf::RenderWindow& window) const;
-
+private:
+    // Members unique to the Enemy's AI
+    sf::Vector2f mDirection;
+    float mLeftBound;
+    float mRightBound;
 };
 
 #endif //ENEMY_H
+

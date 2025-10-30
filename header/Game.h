@@ -2,6 +2,8 @@
 #define GAME_H
 
 #include <SFML/Graphics.hpp>
+
+#include "Enemy.h"
 #include "Player.h"
 
 class Game
@@ -20,6 +22,7 @@ private:
     void render();
 
     Player mPlayer;
+    Enemy mEnemy;
     sf::Texture mBackgroundTexture;
     sf::Sprite mBackgroundSprite;
     sf::RenderWindow mWindow;
