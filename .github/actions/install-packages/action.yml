@@ -32,14 +32,20 @@ runs:
     # -------------------------
     # 🪟 Windows Dependencies
     # -------------------------
-    - name: Install Windows Dependencies (Ninja)
+    
+    # --- THIS IS THE FIX ---
+    - name: Install Windows Dependencies (Ninja and SFML deps)
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        # Only use choco for ninja, which we know works
+        # Install ninja
         choco install ninja
         
-    - name: Install Windows Dependencies (SFML)
+        # Install SFML's dependencies (Freetype, OpenAL, Vorbis, Ogg)
+        # This is required for SFMLConfig.cmake to pass its internal checks
+        choco install freetype openal-soft libvorbis libogg
+        
+    - name: Install Windows Dependencies (Download SFML)
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'cl'
       run: |
@@ -51,5 +57,4 @@ runs:
         7z x sfml.zip -osfml_install
         
         # Set an env var pointing to the unzipped folder
-        # The path will be something like D:\a\RepoName\RepoName\sfml_install\SFML-2.6.1
         echo "SFML_DIR_WINDOWS=${GITHUB_WORKSPACE}/sfml_install/SFML-2.6.1" >> $GITHUB_ENV
