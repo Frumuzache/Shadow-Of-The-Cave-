@@ -1,99 +1,114 @@
 name: 'Install packages'
-description: 'Install required packages for building the project'
+description: 'Install required packages for building the project (SFML 3 via vcpkg on all OSes)'
 
 runs:
   using: "composite"
   steps:
-    # -------------------------
-    # 🐧 Linux Dependencies
-    # -------------------------
-    - name: Install Linux Dependencies (SFML2 + audio, Ninja, Valgrind)
+    # --------------------------------
+    # Common: set up paths & caching
+    # --------------------------------
+    - name: Define vcpkg env vars
+      shell: bash
+      run: |
+        set -eux
+        # Where vcpkg will live in the workspace
+        echo "VCPKG_ROOT=${GITHUB_WORKSPACE}/vcpkg" >> "$GITHUB_ENV"
+        # Toolchain file used by CMake
+        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
+        # Binary cache to speed up subsequent runs
+        echo "VCPKG_DEFAULT_BINARY_CACHE=${GITHUB_WORKSPACE}/.vcpkg-bincache" >> "$GITHUB_ENV"
+
+    - name: Cache vcpkg + binary cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.VCPKG_ROOT }}
+          ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        key: vcpkg-${{ runner.os }}-${{ matrix.cxx || 'default' }}-sfml3
+
+    # --------------------------------
+    # Linux
+    # --------------------------------
+    - name: Install Linux build tools (no SFML from apt!)
       if: runner.os == 'Linux'
       shell: bash
       run: |
         set -eux
-        sudo apt-get update -y
-        # SFML 2.x with audio + common GL/X11 deps + Ninja + Valgrind
-        sudo apt-get install -y --no-install-recommends \
-          libsfml-dev \
-          libopenal-dev \
-          libsndfile1-dev \
-          libgl1-mesa-dev \
-          libegl1-mesa-dev \
-          libdrm-dev \
-          libgbm-dev \
-          libfreetype6-dev \
-          libxcursor-dev \
-          libxrandr-dev \
-          libxi-dev \
-          libxkbcommon-x11-0 \
-          libxcb-icccm4 \
-          libxcb-image0 \
-          libxcb-keysyms1 \
-          libxcb-randr0 \
-          libxcb-render-util0 \
-          libxcb-xinerama0 \
-          libxcb-xfixes0 \
-          ninja-build \
-          valgrind
+        sudo apt-get update
+        # Basic build deps and Ninja (keep SFML OUT of apt to avoid SFML 2)
+        sudo apt-get install -y --no-install-recommends build-essential ninja-build git curl zip unzip pkg-config
+        # Optional: for valgrind matrix
+        if [ "${{ matrix.runs_valgrind || '' }}" = "true" ]; then
+          sudo apt-get install -y --no-install-recommends valgrind
+        fi
 
-        # Help CMake resolve the correct SFML 2 config path
-        echo "SFML_DIR=/usr/lib/x86_64-linux-gnu/cmake/SFML" >> "$GITHUB_ENV"
-
-        # Quick probe to fail early if audio component is missing
-        cat > _probe_sfml.cmake <<'CMK'
-        cmake_minimum_required(VERSION 3.18)
-        # NOTE: components must be lowercase in SFML 2.x
-        find_package(SFML 2 REQUIRED COMPONENTS system window graphics audio)
-        message(STATUS "SFML2 FOUND: ${SFML_FOUND} ; INCLUDE=${SFML_INCLUDE_DIRS}")
-        CMK
-        cmake -P _probe_sfml.cmake
-
-    # -------------------------
-    # 🍏 macOS Dependencies
-    # -------------------------
-    - name: Install macOS Dependencies
-      shell: bash
+    # --------------------------------
+    # macOS
+    # --------------------------------
+    - name: Install macOS build tools
       if: runner.os == 'macOS'
+      shell: bash
       run: |
         set -eux
         brew update
-        brew install sfml ninja || true
-        # Expose SFML_DIR so CMake finds the config files reliably
-        SFML_PREFIX="$(brew --prefix sfml 2>/dev/null || true)"
-        if [[ -n "${SFML_PREFIX}" && -d "${SFML_PREFIX}/lib/cmake/SFML" ]]; then
-          echo "SFML_DIR=${SFML_PREFIX}/lib/cmake/SFML" >> "$GITHUB_ENV"
-        fi
+        brew install ninja git
 
-    # -------------------------
-    # 🪟 Windows Dependencies
-    # -------------------------
-    - name: Install Windows Dependencies (Ninja)
-      shell: bash
+    # --------------------------------
+    # Windows
+    # --------------------------------
+    - name: Install Windows build tools
       if: runner.os == 'Windows'
+      shell: bash
       run: |
-        choco install -y ninja
+        choco install ninja -y
 
-    - name: Cache vcpkg
-      if: runner.os == 'Windows'
-      uses: actions/cache@v4
-      id: cache-vcpkg
-      with:
-        path: |
-          vcpkg
-          ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-        key: vcpkg-cache-${{ runner.os }}-${{ matrix.cxx }}
-
-    - name: Install Windows Dependencies (vcpkg)
+    # --------------------------------
+    # vcpkg bootstrap (all OSes)
+    # --------------------------------
+    - name: Bootstrap vcpkg
       shell: bash
-      if: runner.os == 'Windows' && matrix.cxx == 'cl'
       run: |
         set -eux
-        if [[ ! -d "vcpkg" || "${{ steps.cache-vcpkg.outputs.cache-hit }}" != "true" ]]; then
-          git clone https://github.com/Microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat
-        else
-          echo "vcpkg cache restored."
+        if [ ! -d "${VCPKG_ROOT}" ]; then
+          git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}"
         fi
-        ./vcpkg/vcpkg install sfml:x64-windows
-        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
+        pushd "${VCPKG_ROOT}"
+        git pull --ff-only || true
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          ./bootstrap-vcpkg.bat
+        else
+          ./bootstrap-vcpkg.sh
+        fi
+        popd
+
+    # --------------------------------
+    # Install SFML 3 via vcpkg (triplet per OS)
+    # --------------------------------
+    - name: Install SFML 3 (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -eux
+        "${VCPKG_ROOT}/vcpkg" install sfml:x64-linux
+
+    - name: Install SFML 3 (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        set -eux
+        "${VCPKG_ROOT}/vcpkg" install sfml:x64-osx
+
+    - name: Install SFML 3 (Windows MSVC)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      shell: bash
+      run: |
+        set -eux
+        "${VCPKG_ROOT}/vcpkg" install sfml:x64-windows
+
+    - name: Install SFML 3 (Windows MinGW)
+      if: runner.os == 'Windows' && matrix.cxx != 'cl'
+      shell: bash
+      run: |
+        set -eux
+        # MinGW triplet (static runtime by default). Adjust to x64-mingw-dynamic if you need DLLs.
+        "${VCPKG_ROOT}/vcpkg" install sfml:x64-mingw-static
