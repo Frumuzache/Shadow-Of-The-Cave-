@@ -10,8 +10,13 @@ runs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        # FIX: Adăugat libsfml-dev pentru Ubuntu
-        sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev
+        # FIX: Instalare explicită a tuturor componentelor SFML
+        sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev \
+          libsfml-audio-dev \
+          libsfml-graphics-dev \
+          libsfml-network-dev \
+          libsfml-system-dev \
+          libsfml-window-dev
         # https://github.com/llvm/llvm-project/issues/78354
         sudo sysctl vm.mmap_rnd_bits=28
 
@@ -57,3 +62,4 @@ runs:
       run: |
         # sudo apt-get update
         sudo apt-get install --no-install-recommends valgrind
+
