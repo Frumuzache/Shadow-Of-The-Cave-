@@ -1,47 +1,64 @@
 name: 'Install packages'
-description: 'Install required packages'
+description: 'Install required packages for building the project'
 
 runs:
   using: "composite"
   steps:
-    # Common Linux dependencies
+    # -------------------------
+    # 🐧 Linux Dependencies
+    # -------------------------
     - name: Install Linux Dependencies
       shell: bash
       if: runner.os == 'Linux'
       run: |
-        # FIX: Secvență de instalare mai robustă
-        sudo apt-get update
+        set -eux  # stop on errors and print commands
+        sudo apt-get update -y
         sudo apt-get install -y --no-install-recommends software-properties-common
         sudo add-apt-repository -y universe
-        sudo apt-get update
-        # Acum ar trebui să găsească pachetele
-        sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev \
-          libsfml-audio-dev \
-          libsfml-graphics-dev \
-          libsfml-network-dev \
-          libsfml-system-dev \
-          libsfml-window-dev
-        # https://github.com/llvm/llvm-project/issues/78354
-        sudo sysctl vm.mmap_rnd_bits=28
+        sudo apt-get update -y
 
-    # FIX: Pas nou pentru dependențele de macOS
+        # Install SFML (compatible with Ubuntu 22.04 and 24.04)
+        if apt-cache show libsfml-dev >/dev/null 2>&1; then
+          echo "Installing unified SFML package (libsfml-dev)"
+          sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev
+        else
+          echo "Installing legacy SFML split packages"
+          sudo apt-get install -y --no-install-recommends ninja-build \
+            libsfml-audio-dev \
+            libsfml-graphics-dev \
+            libsfml-network-dev \
+            libsfml-system-dev \
+            libsfml-window-dev
+        fi
+
+        # Workaround for LLVM bug on some runners
+        sudo sysctl vm.mmap_rnd_bits=28 || true
+
+    # -------------------------
+    # 🍏 macOS Dependencies
+    # -------------------------
     - name: Install macOS Dependencies
       shell: bash
       if: runner.os == 'macOS'
       run: |
-        brew install sfml
+        set -eux
+        brew update
+        brew install sfml ninja
 
-    # FIX: Pas nou pentru dependențele de Windows
+    # -------------------------
+    # 🪟 Windows Dependencies
+    # -------------------------
     - name: Install Windows Dependencies
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        choco install sfml
+        choco install sfml ninja
 
-    # Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
+    # -------------------------
+    # 🧰 Optional: Clang (for MSAN builds)
+    # -------------------------
     - name: Install Clang ${{ matrix.clang_ver }}
       if: runner.os == 'Linux' && matrix.runs_msan == true
-      # renovate: datasource=github-tags depName=nick-fields/retry versioning=loose
       uses: nick-fields/retry@v3
       with:
         shell: bash
@@ -57,13 +74,14 @@ runs:
       shell: bash
       if: runner.os == 'Linux' && matrix.runs_msan == true
       run: |
-        # sudo apt-get update
-        sudo apt-get install --no-install-recommends libc++-${{ matrix.clang_ver }}-dev libc++abi-${{ matrix.clang_ver }}-dev
+        sudo apt-get install -y --no-install-recommends \
+          libc++-${{ matrix.clang_ver }}-dev libc++abi-${{ matrix.clang_ver }}-dev
 
+    # -------------------------
+    # 🧪 Optional: Valgrind for memory checking
+    # -------------------------
     - name: Install valgrind
       shell: bash
       if: runner.os == 'Linux' && matrix.runs_valgrind == true
       run: |
-        # sudo apt-get update
-        sudo apt-get install --no-install-recommends valgrind
-
+        sudo apt-get install -y --no-install-recommends valgrind
