@@ -16,17 +16,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # This step is commented out in your original file, so we'll keep it that way.
-    # - name: Cache deps
-    #   uses: actions/cache@v4
-    #   id: cache-deps
-    #   with:
-    #     path: |
-    #       ${{ env.BUILD_DIR }}/_deps
-    #     key: ${{ inputs.cache_key }}-${{ matrix.cmake_generator }}-${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-${{ env.BUILD_TYPE }}
-
     - name: Cache Ninja deps
-      # The 'uses' line must have a value
       uses: actions/cache@v4.2.4
       if: matrix.cmake_generator == 'Ninja'
       id: cache-deps-ninja
@@ -38,7 +28,6 @@ runs:
         restore-keys: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-
 
     - name: Cache MinGW
-      # The 'uses' line must have a value
       uses: actions/cache@v4.2.4
       id: cache-mingw
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
@@ -47,7 +36,6 @@ runs:
         key: ${{ runner.os }}-${{ env.MINGW_VER }}
 
     - name: Download toolchain (MinGW)
-      # The 'uses' line must have a value
       uses: suisei-cn/actions-download-file@v1.6.0
       id: download-mingw-gcc
       if: runner.os == 'Windows' && matrix.cxx == 'g++' && steps.cache-mingw.outputs.cache-hit != 'true'
@@ -66,8 +54,6 @@ runs:
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
       run: |
         PATH="$(pwd)/gcc/mingw64/bin:${PATH}"
-        # because GH Actions does not properly prepend to $PATH and still chooses VM gcc
-        # CMake generator not passed as option to script since it might not be defined
         export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
         bash ./scripts/cmake.sh configure \
           -b ${{ env.BUILD_DIR }} \
@@ -83,13 +69,13 @@ runs:
       run: |
         export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
 
-        # --- THIS IS THE FIX FOR WINDOWS SFML ---
+        # --- THIS IS THE FIX ---
         # Define extra flags based on OS
         EXTRA_CMAKE_FLAGS="${{ inputs.custom_flags }}"
         if [[ "${{ runner.os }}" == "Windows" && "${{ matrix.cxx }}" == "cl" ]]; then
-          echo "Adding SFML path for Windows MSVC: ${{ env.SFML_DIR_WINDOWS }}"
-          # We pass the path to CMAKE_PREFIX_PATH so find_package() can find SFML
-          EXTRA_CMAKE_FLAGS+=" -DCMAKE_PREFIX_PATH=${{ env.SFML_DIR_WINDOWS }}"
+          echo "Adding vcpkg toolchain for Windows MSVC: ${{ env.VCPKG_TOOLCHAIN_FILE }}"
+          # Pass the vcpkg toolchain file to CMake
+          EXTRA_CMAKE_FLAGS+=" -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_TOOLCHAIN_FILE }}"
         fi
         
         bash ./scripts/cmake.sh configure \
