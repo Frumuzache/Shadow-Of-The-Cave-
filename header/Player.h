@@ -23,6 +23,8 @@ public:
 
     static float getAttackDamage() { return 10.f; } // Later, this comes from a Weapon
     static float getAttackRange()  { return 50.f; } // Later, this comes from a Weapon
+     ;
+
 
 private:
     // These functions are specific to the Player's update

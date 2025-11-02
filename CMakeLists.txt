@@ -67,6 +67,11 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         header/RangedWeapon.h
         source/Weapon.cpp
         source/MeleeWeapon.cpp
+        header/Level.h
+        source/Level.cpp
+        header/HUD.h
+        source/HUD.cpp
+        source/RangedWeapon.cpp
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME}

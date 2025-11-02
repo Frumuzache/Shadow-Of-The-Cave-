@@ -2,83 +2,69 @@
 #include "../header/Game.h"
 #include "../header/Player.h"
 #include <cmath>
+#include <iostream> // For std::ostream
+#include <ostream>  // For std::ostream
 
-
-// Constructor
-Game::Game()
-    : mBackgroundTexture{},
-    mBackgroundSprite(mBackgroundTexture),
-    mWindow(sf::VideoMode({1920, 1080}), "Shadow Of The Cave"),
-    mClock{}
-
+// Parameterized constructor
+Game::Game(unsigned int width, unsigned int height, const std::string& title)
+    : mWindow(sf::VideoMode({width, height}), title),
+      mClock{},
+      // --- Initialize composed objects ---
+      mLevel("../assets/background.png"),
+      mHUD("../assets/arial.ttf"), // <-- Assumes this font exists
+      mPlayer(Player::getInstance()) // Get singleton instance
 {
     mWindow.setFramerateLimit(120);
 
-    if (!mBackgroundTexture.loadFromFile("../assets/background.png"))
-        throw std::runtime_error("Failed to load background texture");
+    // Use parameterized constructor for Enemies
+    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(300.f, 100.f), 80.f, 50.f));
+    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(600.f, 400.f), 80.f, 50.f));
+    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(900.f, 700.f), 80.f, 50.f));
 
-    mBackgroundSprite.setTexture(mBackgroundTexture, true);
+    // --- Example of operator<< ---
+    std::cout << "Game created. Initial state:\n" << *this << std::endl;
 
-    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(300.f, 100.f)));
-    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(600.f, 400.f)));
-    mEnemies.push_back(std::make_unique<Enemy>(sf::Vector2f(900.f, 700.f)));
+    // --- Example of Rule of Three ---
+    std::cout << "\n--- Testing Rule of Three for Weapon ---\n";
+    Weapon testWeapon = mPlayer.getWeapon(); // Tests Copy Constructor
+    Weapon testWeapon2;
+    testWeapon2 = testWeapon; // Tests Copy Assignment
+    std::cout << "--- End of Test ---\n" << std::endl;
+    // testWeapon and testWeapon2 will be destroyed here, testing Destructor
 }
 
-
-
-
-
 // The main run function
-void Game::run()
-{
-
-    while (mWindow.isOpen())
-    {
+void Game::run() {
+    while (mWindow.isOpen()) {
         sf::Time deltaTime = mClock.restart();
-
         processEvents();
         update(deltaTime);
         render();
     }
 }
 
-
-
-
-
-
-
 void Game::processEvents() {
     while (const std::optional event = mWindow.pollEvent()) {
-
-        if (event->is<sf::Event::Closed>())
-        {
+        if (event->is<sf::Event::Closed>()) {
             mWindow.close();
         }
-
-        else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
-        {
+        else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
             if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
                 mWindow.close();
         }
 
-        if (isKeyPressed(sf::Keyboard::Key::Space))
-        {
-            for (const auto& enemyPtr : mEnemies)
-            {
+        // Using isKeyPressed for continuous actions like attacking is fine
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
+            for (const auto& enemyPtr : mEnemies) {
                 Enemy* mEnemy = enemyPtr.get();
-                // If the enemy doesn't exist (is_dead/nullptr), do nothing
-                if (!mEnemy) // <-- ADD THIS CHECK
-                {
-                    continue; // Skip this input
-                }
+                if (!mEnemy) continue;
 
-                Player& player = Player::getInstance();
-                float attackRange = player.getAttackRange();
-                float attackDamage = player.getAttackDamage();
+                // Get attack stats from the Player object's weapon
+                float attackRange = mPlayer.getAttackRange();
+                float attackDamage = mPlayer.getAttackDamage();
 
-                sf::Vector2f playerPosition = player.getPlayerPosition();
-                sf::Vector2u playerSpriteSize = player.getTextureSize();
+                sf::Vector2f playerPosition = mPlayer.getPlayerPosition();
+                sf::Vector2u playerSpriteSize = mPlayer.getTextureSize();
 
                 sf::Vector2f enemyPosition = mEnemy->getPosition();
                 sf::Vector2u enemySpriteSize = mEnemy->getSpriteSize();
@@ -96,41 +82,51 @@ void Game::processEvents() {
 
 // Function to update the game state
 void Game::update(sf::Time deltaTime) {
-    Player::getInstance().update(deltaTime, mWindow);
+    mPlayer.update(deltaTime, mWindow); // Update player from member
+    mHUD.update(mPlayer); // Update HUD with player's new state
+
     for (auto& enemy : mEnemies)
         enemy->update(deltaTime, mWindow);
 
     std::erase_if(mEnemies, [](const auto& enemy) {
-        if (enemy->getCurrentHealth() <= 0)
-        {
+        if (enemy->getCurrentHealth() <= 0) {
             enemy->death();
             return true;
         }
         return false;
-
     });
 }
 
-
-
-
 // Function to draw everything
-void Game::render()
-{
-    // Clear the window with black color
+void Game::render() {
     mWindow.clear(sf::Color::Black);
 
-    // Draw background first
-    mWindow.draw(mBackgroundSprite);
+    // Draw composed objects
+    mLevel.render(mWindow); // Draw the level
+    mPlayer.render(mWindow); // Draw the player
 
-    // Draw the player
-    Player::getInstance().render(mWindow);
-
-    for (auto& enemy : mEnemies)
-    {
+    for (auto& enemy : mEnemies) {
         enemy->render(mWindow);
     }
 
-    // Display what was drawn to the screen
+    mHUD.render(mWindow); // Draw the HUD on top
     mWindow.display();
+}
+
+sf::Vector2u Game::getWindowSize() const {
+    return mWindow.getSize();
+}
+
+// --- operator<< (Composition of calls) ---
+std::ostream& operator<<(std::ostream& os, const Game& game) {
+    os << "====== GAME STATE ======\n";
+    os << "* " << game.mLevel << "\n"; // Calls Level::operator<<
+    os << "* " << game.mHUD << "\n";   // Calls HUD::operator<<
+    os << "* " << game.mPlayer << "\n"; // Calls Player::operator<<
+    os << "* Enemies: " << game.mEnemies.size() << "\n";
+    for (const auto& enemy : game.mEnemies) {
+        os << "  " << *enemy << "\n"; // Calls Enemy::operator<<
+    }
+    os << "========================\n";
+    return os;
 }
