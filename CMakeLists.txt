@@ -83,6 +83,10 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME}
 )
 
 
+# Apply your flags/sanitizers only to your target:
+set_custom_stdlib_and_sanitizers(oop false)
+
+
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
 set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
