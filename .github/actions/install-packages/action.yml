@@ -9,7 +9,8 @@ runs:
     # -------------------------
     - name: Install Linux Dependencies
       if: runner.os == 'Linux'
-      uses: ./.github/actions/install-linux-deps  # This is the file we fixed in the last step
+      # This 'uses' points to the file we fixed in our previous conversation
+      uses: ./.github/actions/install-linux-deps
 
     - name: Install valgrind
       shell: bash
@@ -36,4 +37,6 @@ runs:
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        choco install sfml ninja
+        # --- THIS IS THE FIX ---
+        # The package is 'sfml-vc17' for Visual Studio 2022, not 'sfml'
+        choco install sfml-vc17 ninja
