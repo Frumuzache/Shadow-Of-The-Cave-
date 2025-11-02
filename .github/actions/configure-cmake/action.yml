@@ -16,37 +16,74 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # ... (all the cache steps and MinGW steps at the beginning are fine) ...
-    
+    # This step is commented out in your original file, so we'll keep it that way.
+    # - name: Cache deps
+    #   uses: actions/cache@v4
+    #   id: cache-deps
+    #   with:
+    #     path: |
+    #       ${{ env.BUILD_DIR }}/_deps
+    #     key: ${{ inputs.cache_key }}-${{ matrix.cmake_generator }}-${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-${{ env.BUILD_TYPE }}
+
     - name: Cache Ninja deps
+      # The 'uses' line must have a value
       uses: actions/cache@v4.2.4
-      # ... (omitted for brevity) ...
+      if: matrix.cmake_generator == 'Ninja'
+      id: cache-deps-ninja
+      with:
+        path: |
+          ${{ env.BUILD_DIR }}/.ninja_deps
+          ${{ env.BUILD_DIR }}/.ninja_log
+        key: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-
 
     - name: Cache MinGW
+      # The 'uses' line must have a value
       uses: actions/cache@v4.2.4
-      # ... (omitted for brevity) ...
+      id: cache-mingw
+      if: runner.os == 'Windows' && matrix.cxx == 'g++'
+      with:
+        path: gcc
+        key: ${{ runner.os }}-${{ env.MINGW_VER }}
 
     - name: Download toolchain (MinGW)
+      # The 'uses' line must have a value
       uses: suisei-cn/actions-download-file@v1.6.0
-      # ... (omitted for brevity) ...
+      id: download-mingw-gcc
+      if: runner.os == 'Windows' && matrix.cxx == 'g++' && steps.cache-mingw.outputs.cache-hit != 'true'
+      with:
+        url: "https://github.com/brechtsanders/winlibs_mingw/releases/download/${{ env.MINGW_VER }}"
+        target: compiler/
 
     - name: Install toolchain (MinGW)
       shell: bash
-      # ... (omitted for brevity) ...
+      if: runner.os == 'Windows' && matrix.cxx == 'g++' && steps.cache-mingw.outputs.cache-hit != 'true'
+      run: |
+        7z x compiler/${{ steps.download-mingw-gcc.outputs.filename }} -ogcc
 
     - name: Configure CMake (MinGW)
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
-      # ... (omitted for brevity) ...
+      run: |
+        PATH="$(pwd)/gcc/mingw64/bin:${PATH}"
+        # because GH Actions does not properly prepend to $PATH and still chooses VM gcc
+        # CMake generator not passed as option to script since it might not be defined
+        export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
+        bash ./scripts/cmake.sh configure \
+          -b ${{ env.BUILD_DIR }} \
+          -c ${{ env.BUILD_TYPE }} \
+          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}" \
+          -i ${GITHUB_WORKSPACE}/artifacts \
+          -s ${GITHUB_WORKSPACE}
 
-    # --- THIS IS THE FIX ---
-    # This is the step for all non-MinGW builds (including Windows MSVC)
     - name: Configure CMake
       shell: bash
+      # This step runs for all other jobs (Linux, macOS, and Windows MSVC)
       if: ${{ !(runner.os == 'Windows' && matrix.cxx == 'g++') }}
       run: |
         export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
 
+        # --- THIS IS THE FIX FOR WINDOWS SFML ---
         # Define extra flags based on OS
         EXTRA_CMAKE_FLAGS="${{ inputs.custom_flags }}"
         if [[ "${{ runner.os }}" == "Windows" && "${{ matrix.cxx }}" == "cl" ]]; then
