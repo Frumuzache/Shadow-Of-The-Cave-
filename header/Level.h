@@ -3,15 +3,15 @@
 
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <ostream>
 
 class Level {
 public:
-    // Parameterized constructor
-    explicit Level(std::string  texturePath);
+    // FIX: Adăugat 'explicit' pentru a preveni conversiile implicite
+    explicit Level(const std::string& texturePath);
 
     void render(sf::RenderWindow& window) const;
 
-    // operator<< for display
     friend std::ostream& operator<<(std::ostream& os, const Level& level);
 
 private:
