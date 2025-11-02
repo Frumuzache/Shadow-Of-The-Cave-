@@ -28,8 +28,8 @@ public:
 
 private:
     // These functions are specific to the Player's update
-    void updateMovement(sf::Time deltaTime, const sf::Window& window);
-    void updateHealth(sf::Time deltaTime);
+    void updateMovement([[maybe_unused]]sf::Time deltaTime, const sf::Window& window);
+    void updateHealth([[maybe_unused]]sf::Time deltaTime);
     Weapon mWeapon;
 
 };

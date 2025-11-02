@@ -104,5 +104,6 @@ void Player::updateMovement(sf::Time deltaTime, const sf::Window& mWindow)
 
 void Player::updateHealth(sf::Time deltaTime) {
     // Placeholder for health update logic
+   (void)deltaTime; // silence C4100: unreferenced parameter (warnings-as-errors in CI)
 }
 
