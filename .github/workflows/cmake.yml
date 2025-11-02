@@ -2,10 +2,10 @@ name: C++ CI
 
 on:
   push:
-    branches: ['*'] # NOTE: replace/update with appropriate branch name(s)
-    tags: ['*']
-  pull_request:
-    branches: ['*'] # NOTE: replace/update with appropriate branch name(s)
+    branches: ['**'] # NOTE: replace/update with appropriate branch name(s)
+    tags: ['**']
+  # pull_request:
+  #   branches: ['**'] # NOTE: replace/update with appropriate branch name(s)
   workflow_dispatch:
     inputs:
       build_type:
@@ -29,6 +29,8 @@ env:
   EXT_DIR: "ext"
   GEN_DIR: "generated"
   APP_WINDOW: "My Window"
+  # NOTE: also update in CMakeLists FetchContent
+  SFML_VERSION: "2024-12-21-3.0.0"
 
 defaults:
   run:
@@ -86,9 +88,6 @@ jobs:
       CC: ${{ matrix.c }}
       CXX: ${{ matrix.cxx }}
       VSCMD_SKIP_SENDTELEMETRY: 1
-
-      # NOTE: also update in CMakeLists FetchContent
-      SFML_VERSION: "2023-11-04-2.6.1"
 
       # NOTE: replace with another version if this one does not work
       # For more versions, see https://winlibs.com or
@@ -154,7 +153,7 @@ jobs:
           - os: windows-2022
             c: cl
             cxx: cl
-            name: "ASan: Windows 2022 MSVC 19.41"
+            name: "ASan: Windows 2022 MSVC 19.43"
             cmake_flags: "-DUSE_ASAN=ON -DBUILD_SHARED_LIBS=TRUE"
             # Ninja is not faster on MSVC because... MSVC
             # cmake_generator: "Ninja"
@@ -195,16 +194,17 @@ jobs:
 
       - name: Build
         run: |
-          bash ./scripts/cmake.sh build -t ${{ env.BUILD_TYPE }}
+          bash ./scripts/cmake.sh build -c ${{ env.BUILD_TYPE }}
 
       - name: Install
         # Use CMake to "install" build artifacts (only interested in CMake registered targets) to our custom artifacts directory
         run: |
-          bash ./scripts/cmake.sh install -i artifacts -t ${{ env.BUILD_TYPE }}
+          bash ./scripts/cmake.sh install -c ${{ env.BUILD_TYPE }} -i artifacts
 
       - name: Move artifacts
         run: |
           mkdir ${{ env.ZIP_NAME }}
+          shopt -s dotglob
           mv artifacts/${{ env.BIN_DIR }}/* ${{ env.ZIP_NAME }}
           ls -la ${{ env.ZIP_NAME }}
 
@@ -215,6 +215,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ZIP_NAME }}_${{ env.TIMESTAMP }}
+          include-hidden-files: true
           path: ${{ env.ZIP_NAME }}
           retention-days: 30
 
