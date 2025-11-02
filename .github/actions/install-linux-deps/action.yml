@@ -1,11 +1,42 @@
 name: 'Install common Linux dependencies'
-description: 'Common logic for Linux dependencies installation'
+description: 'Install all required Linux dependencies for building and testing'
+
 runs:
   using: "composite"
   steps:
-    - run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends \
+    - name: Install All Linux Dependencies
+      shell: bash
+      if: runner.os == 'Linux'
+      run: |
+        set -eux
+        sudo apt-get update -y
+        # Needed for add-apt-repository
+        sudo apt-get install -y --no-install-recommends software-properties-common
+        sudo add-apt-repository -y universe
+        sudo apt-get update -y
+
+        # --- THIS IS THE FIX ---
+        # Install SFML (unified or split)
+        if apt-cache show libsfml-dev >/dev/null 2>&1; then
+          echo "Installing SFML (libsfml-dev)"
+          sudo apt-get install -y --no-install-recommends libsfml-dev
+        else
+          echo "Installing legacy SFML split packages"
+          sudo apt-get install -y --no-install-recommends \
+            libsfml-audio-dev \
+            libsfml-graphics-dev \
+            libsfml-network-dev \
+            libsfml-system-dev \
+            libsfml-window-dev
+        fi
+        
+        # --- Install all other packages ---
+        echo "Installing common build, X11, and test dependencies"
+        sudo apt-get install -y --no-install-recommends \
+          ninja-build \
+          xdotool \
+          openbox \
+          xorg \
           libxrandr-dev \
           libxcursor-dev \
           libudev-dev \
@@ -18,5 +49,14 @@ runs:
           libgbm-dev \
           libfreetype6-dev \
           libxi-dev \
-          xorg
-      shell: bash
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-xinerama0 \
+          libxcb-xfixes0
+
+        # https://github.com/llvm/llvm-project/issues/78354
+        sudo sysctl vm.mmap_rnd_bits=28 || true
