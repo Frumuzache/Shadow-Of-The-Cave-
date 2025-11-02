@@ -70,13 +70,16 @@ runs:
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
       run: |
         PATH="$(pwd)/gcc/mingw64/bin:${PATH}"
+        # Set the path to SFML for Windows
+        SFML_CMAKE_PATH="-DCMAKE_PREFIX_PATH=C:/tools/sfml"
+
         # because GH Actions does not properly prepend to $PATH and still chooses VM gcc
         # CMake generator not passed as option to script since it might not be defined
         export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
         bash ./scripts/cmake.sh configure \
           -b ${{ env.BUILD_DIR }} \
           -c ${{ env.BUILD_TYPE }} \
-          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}" \
+          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }} ${SFML_CMAKE_PATH}" \
           -i ${GITHUB_WORKSPACE}/artifacts \
           -s ${GITHUB_WORKSPACE}
 
@@ -84,11 +87,22 @@ runs:
       shell: bash
       if: ${{ !(runner.os == 'Windows' && matrix.cxx == 'g++') }}
       run: |
+        # Set the path to SFML based on the OS
+        SFML_CMAKE_PATH=""
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          # This will be for MSVC (cl)
+          SFML_CMAKE_PATH="-DCMAKE_PREFIX_PATH=C:/tools/sfml"
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          # This will be for Clang/GCC on macOS
+          SFML_CMAKE_PATH="-DCMAKE_PREFIX_PATH=$(brew --prefix)"
+        fi
+        # Linux (apt-get) installs to system paths, so SFML_CMAKE_PATH remains empty
+
         export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
         bash ./scripts/cmake.sh configure \
           -b ${{ env.BUILD_DIR }} \
           -c ${{ env.BUILD_TYPE }} \
-          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}" \
+          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }} ${SFML_CMAKE_PATH}" \
           -i ${GITHUB_WORKSPACE}/artifacts \
           -s ${GITHUB_WORKSPACE}
 
