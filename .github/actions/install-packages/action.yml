@@ -17,20 +17,24 @@ runs:
         sudo add-apt-repository -y universe
         sudo apt-get update -y
 
+        # Define common dependencies for SFML
+        SFML_DEPS="libgl1-mesa-dev libx11-dev libxrandr-dev libxcursor-dev libxinerama-dev libudev-dev libfreetype6-dev libopenal-dev libvorbis-dev libflac-dev"
+
         # Install SFML (unified or split)
         if apt-cache show libsfml-dev >/dev/null 2>&1; then
-          echo "Installing SFML and audio dependencies"
+          echo "Installing SFML and its dependencies"
           sudo apt-get install -y --no-install-recommends \
-            ninja-build libsfml-dev libopenal-dev libvorbis-dev libflac-dev
+            ninja-build libsfml-dev $SFML_DEPS
         else
-          echo "Installing legacy SFML split packages"
+          echo "Installing legacy SFML split packages and their dependencies"
           sudo apt-get install -y --no-install-recommends \
             ninja-build \
             libsfml-audio-dev \
             libsfml-graphics-dev \
             libsfml-network-dev \
             libsfml-system-dev \
-            libsfml-window-dev
+            libsfml-window-dev \
+            $SFML_DEPS
         fi
 
         sudo sysctl vm.mmap_rnd_bits=28 || true
@@ -60,6 +64,7 @@ runs:
     # -------------------------
     - name: Install Clang ${{ matrix.clang_ver }}
       if: runner.os == 'Linux' && matrix.runs_msan == true
+      # renovate: datasource=github-tags depName=nick-fields/retry versioning=loose
       uses: nick-fields/retry@v3
       with:
         shell: bash
@@ -67,3 +72,6 @@ runs:
         max_attempts: 3
         retry_on: error
         command: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh ${{ matrix.clang_ver }} all
