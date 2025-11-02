@@ -10,9 +10,24 @@ runs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install ninja-build
+        # FIX: Adăugat libsfml-dev pentru Ubuntu
+        sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev
         # https://github.com/llvm/llvm-project/issues/78354
         sudo sysctl vm.mmap_rnd_bits=28
+
+    # FIX: Pas nou pentru dependențele de macOS
+    - name: Install macOS Dependencies
+      shell: bash
+      if: runner.os == 'macOS'
+      run: |
+        brew install sfml
+
+    # FIX: Pas nou pentru dependențele de Windows
+    - name: Install Windows Dependencies
+      shell: bash
+      if: runner.os == 'Windows'
+      run: |
+        choco install sfml
 
     # Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
     - name: Install Clang ${{ matrix.clang_ver }}
