@@ -32,29 +32,37 @@ runs:
     # -------------------------
     # 🪟 Windows Dependencies
     # -------------------------
-    
-    # --- THIS IS THE FIX ---
-    - name: Install Windows Dependencies (Ninja and SFML deps)
+    - name: Install Windows Dependencies (Ninja)
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        # Install ninja
         choco install ninja
         
-        # Install SFML's dependencies (Freetype, OpenAL, Vorbis, Ogg)
-        # This is required for SFMLConfig.cmake to pass its internal checks
-        choco install freetype openal-soft libvorbis libogg
-        
-    - name: Install Windows Dependencies (Download SFML)
+    - name: Cache vcpkg
+      if: runner.os == 'Windows'
+      uses: actions/cache@v4
+      id: cache-vcpkg
+      with:
+        path: |
+          vcpkg
+          ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        key: vcpkg-cache-${{ runner.os }}-${{ matrix.cxx }}
+
+    - name: Install Windows Dependencies (vcpkg)
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'cl'
       run: |
         set -eux
-        # Download SFML for Visual Studio 2022 (vc17), 64-bit
-        curl -L https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip -o sfml.zip
-        
-        # Unzip to a folder named "sfml_install"
-        7z x sfml.zip -osfml_install
-        
-        # Set an env var pointing to the unzipped folder
-        echo "SFML_DIR_WINDOWS=${GITHUB_WORKSPACE}/sfml_install/SFML-2.6.1" >> $GITHUB_ENV
+        if [[ ! -d "vcpkg" || "${{ steps.cache-vcpkg.outputs.cache-hit }}" != "true" ]]; then
+          echo "Cloning vcpkg..."
+          git clone https://github.com/Microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.bat
+        else
+          echo "vcpkg cache restored."
+        fi
+
+        # Install SFML and all its dependencies for 64-bit Windows
+        ./vcpkg/vcpkg install sfml:x64-windows
+
+        # Set the environment variable for the configure step
+        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
