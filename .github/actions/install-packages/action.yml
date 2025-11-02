@@ -9,10 +9,12 @@ runs:
       shell: bash
       if: runner.os == 'Linux'
       run: |
-        # FIX: Adăugăm repository-ul 'universe' care conține SFML
+        # FIX: Secvență de instalare mai robustă
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends software-properties-common
         sudo add-apt-repository -y universe
         sudo apt-get update
-        # FIX: Instalare explicită a tuturor componentelor SFML
+        # Acum ar trebui să găsească pachetele
         sudo apt-get install -y --no-install-recommends ninja-build libsfml-dev \
           libsfml-audio-dev \
           libsfml-graphics-dev \
