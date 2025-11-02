@@ -7,16 +7,47 @@ runs:
     # -------------------------
     # 🐧 Linux Dependencies
     # -------------------------
-    - name: Install Linux Dependencies
+    - name: Install Linux Dependencies (SFML2 + audio, Ninja, Valgrind)
       if: runner.os == 'Linux'
-      uses: ./.github/actions/install-linux-deps
-
-    - name: Install valgrind
       shell: bash
-      if: runner.os == 'Linux' && matrix.runs_valgrind == true
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends valgrind
+        set -eux
+        sudo apt-get update -y
+        # SFML 2.x with audio + common GL/X11 deps + Ninja + Valgrind
+        sudo apt-get install -y --no-install-recommends \
+          libsfml-dev \
+          libopenal-dev \
+          libsndfile1-dev \
+          libgl1-mesa-dev \
+          libegl1-mesa-dev \
+          libdrm-dev \
+          libgbm-dev \
+          libfreetype6-dev \
+          libxcursor-dev \
+          libxrandr-dev \
+          libxi-dev \
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-xinerama0 \
+          libxcb-xfixes0 \
+          ninja-build \
+          valgrind
+
+        # Help CMake resolve the correct SFML 2 config path
+        echo "SFML_DIR=/usr/lib/x86_64-linux-gnu/cmake/SFML" >> "$GITHUB_ENV"
+
+        # Quick probe to fail early if audio component is missing
+        cat > _probe_sfml.cmake <<'CMK'
+        cmake_minimum_required(VERSION 3.18)
+        # NOTE: components must be lowercase in SFML 2.x
+        find_package(SFML 2 REQUIRED COMPONENTS system window graphics audio)
+        message(STATUS "SFML2 FOUND: ${SFML_FOUND} ; INCLUDE=${SFML_INCLUDE_DIRS}")
+        CMK
+        cmake -P _probe_sfml.cmake
 
     # -------------------------
     # 🍏 macOS Dependencies
@@ -27,7 +58,12 @@ runs:
       run: |
         set -eux
         brew update
-        brew install sfml ninja
+        brew install sfml ninja || true
+        # Expose SFML_DIR so CMake finds the config files reliably
+        SFML_PREFIX="$(brew --prefix sfml 2>/dev/null || true)"
+        if [[ -n "${SFML_PREFIX}" && -d "${SFML_PREFIX}/lib/cmake/SFML" ]]; then
+          echo "SFML_DIR=${SFML_PREFIX}/lib/cmake/SFML" >> "$GITHUB_ENV"
+        fi
 
     # -------------------------
     # 🪟 Windows Dependencies
@@ -36,8 +72,8 @@ runs:
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        choco install ninja
-        
+        choco install -y ninja
+
     - name: Cache vcpkg
       if: runner.os == 'Windows'
       uses: actions/cache@v4
@@ -54,15 +90,10 @@ runs:
       run: |
         set -eux
         if [[ ! -d "vcpkg" || "${{ steps.cache-vcpkg.outputs.cache-hit }}" != "true" ]]; then
-          echo "Cloning vcpkg..."
           git clone https://github.com/Microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.bat
         else
           echo "vcpkg cache restored."
         fi
-
-        # Install SFML and all its dependencies for 64-bit Windows
         ./vcpkg/vcpkg install sfml:x64-windows
-
-        # Set the environment variable for the configure step
-        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
