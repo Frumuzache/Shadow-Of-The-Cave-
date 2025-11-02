@@ -28,6 +28,10 @@ void Player::update(sf::Time deltaTime, const sf::Window& mWindow)
     updateHealth(deltaTime);
 }
 
+Weapon& Player::getWeapon()
+{
+    return mWeapon;
+}
 
 sf::Vector2f Player::getPlayerPosition() const
 {

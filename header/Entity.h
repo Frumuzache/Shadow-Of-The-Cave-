@@ -29,12 +29,18 @@ public:
         return mSprite.getPosition();
     }
 
-    // "protected" means this class and any child classes (Player, Enemy)
-    // can access these members.
+    sf::Vector2u getSpriteSize() const {
+        return mTexture.getSize();
+    }
+
 protected:
     sf::Texture mTexture;
     sf::Sprite mSprite;
     float mMovementSpeed;
+
+    float maxHealth;
+    float currentHealth;
+
 };
 
 #endif //ENTITY_H

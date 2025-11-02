@@ -1,8 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
-
 #include <SFML/Graphics.hpp>
-
+#include <memory>
+#include <optional>
 #include "Enemy.h"
 #include "Player.h"
 
@@ -21,7 +21,7 @@ private:
     void update(sf::Time deltaTime);
     void render();
 
-    Enemy mEnemy;
+    std::vector<std::unique_ptr<Enemy>> mEnemies;
     sf::Texture mBackgroundTexture;
     sf::Sprite mBackgroundSprite;
     sf::RenderWindow mWindow;
