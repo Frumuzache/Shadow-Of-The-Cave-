@@ -7,8 +7,7 @@
 
 class Level {
 public:
-    // FIX: Adăugat 'explicit' pentru a preveni conversiile implicite
-    explicit Level(const std::string& texturePath);
+    Level(std::string texturePath);
 
     void render(sf::RenderWindow& window) const;
 
