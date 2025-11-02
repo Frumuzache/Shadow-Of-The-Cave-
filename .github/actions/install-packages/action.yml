@@ -9,7 +9,6 @@ runs:
     # -------------------------
     - name: Install Linux Dependencies
       if: runner.os == 'Linux'
-      # This 'uses' points to the file we fixed in our previous conversation
       uses: ./.github/actions/install-linux-deps
 
     - name: Install valgrind
@@ -33,10 +32,24 @@ runs:
     # -------------------------
     # 🪟 Windows Dependencies
     # -------------------------
-    - name: Install Windows Dependencies
+    - name: Install Windows Dependencies (Ninja)
       shell: bash
       if: runner.os == 'Windows'
       run: |
-        # --- THIS IS THE FIX ---
-        # The package is 'sfml-vc17' for Visual Studio 2022, not 'sfml'
-        choco install sfml-vc17 ninja
+        # Only use choco for ninja, which we know works
+        choco install ninja
+        
+    - name: Install Windows Dependencies (SFML)
+      shell: bash
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      run: |
+        set -eux
+        # Download SFML for Visual Studio 2022 (vc17), 64-bit
+        curl -L https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip -o sfml.zip
+        
+        # Unzip to a folder named "sfml_install"
+        7z x sfml.zip -osfml_install
+        
+        # Set an env var pointing to the unzipped folder
+        # The path will be something like D:\a\RepoName\RepoName\sfml_install\SFML-2.6.1
+        echo "SFML_DIR_WINDOWS=${GITHUB_WORKSPACE}/sfml_install/SFML-2.6.1" >> $GITHUB_ENV
