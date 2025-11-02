@@ -8,33 +8,32 @@ runs:
     # 🐧 Linux Dependencies
     # -------------------------
     - name: Install Linux Dependencies
-  shell: bash
-  if: runner.os == 'Linux'
-  run: |
-    set -eux
-    sudo apt-get update -y
-    sudo apt-get install -y --no-install-recommends software-properties-common
-    sudo add-apt-repository -y universe
-    sudo apt-get update -y
+      shell: bash
+      if: runner.os == 'Linux'
+      run: |
+        set -eux
+        sudo apt-get update -y
+        sudo apt-get install -y --no-install-recommends software-properties-common
+        sudo add-apt-repository -y universe
+        sudo apt-get update -y
 
-    # Install SFML (unified or split)
-    if apt-cache show libsfml-dev >/dev/null 2>&1; then
-      echo "Installing SFML and audio dependencies"
-      sudo apt-get install -y --no-install-recommends \
-        ninja-build libsfml-dev libopenal-dev libvorbis-dev libflac-dev
-    else
-      echo "Installing legacy SFML split packages"
-      sudo apt-get install -y --no-install-recommends \
-        ninja-build \
-        libsfml-audio-dev \
-        libsfml-graphics-dev \
-        libsfml-network-dev \
-        libsfml-system-dev \
-        libsfml-window-dev
-    fi
+        # Install SFML (unified or split)
+        if apt-cache show libsfml-dev >/dev/null 2>&1; then
+          echo "Installing SFML and audio dependencies"
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build libsfml-dev libopenal-dev libvorbis-dev libflac-dev
+        else
+          echo "Installing legacy SFML split packages"
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build \
+            libsfml-audio-dev \
+            libsfml-graphics-dev \
+            libsfml-network-dev \
+            libsfml-system-dev \
+            libsfml-window-dev
+        fi
 
-    sudo sysctl vm.mmap_rnd_bits=28 || true
-
+        sudo sysctl vm.mmap_rnd_bits=28 || true
 
     # -------------------------
     # 🍏 macOS Dependencies
@@ -68,22 +67,3 @@ runs:
         max_attempts: 3
         retry_on: error
         command: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x ./llvm.sh
-          sudo ./llvm.sh ${{ matrix.clang_ver }}
-
-    - name: Install libc++ (Linux Clang ${{ matrix.clang_ver }})
-      shell: bash
-      if: runner.os == 'Linux' && matrix.runs_msan == true
-      run: |
-        sudo apt-get install -y --no-install-recommends \
-          libc++-${{ matrix.clang_ver }}-dev libc++abi-${{ matrix.clang_ver }}-dev
-
-    # -------------------------
-    # 🧪 Optional: Valgrind for memory checking
-    # -------------------------
-    - name: Install valgrind
-      shell: bash
-      if: runner.os == 'Linux' && matrix.runs_valgrind == true
-      run: |
-        sudo apt-get install -y --no-install-recommends valgrind
