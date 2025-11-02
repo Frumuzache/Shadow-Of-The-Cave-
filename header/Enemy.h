@@ -1,5 +1,6 @@
 #ifndef ENEMY_H
 #define ENEMY_H
+#include <SFML/Graphics.hpp>
 
 #include "Entity.h" // <-- Include the base class
 
@@ -15,10 +16,8 @@ public:
     // render() is inherited from Entity
 
 private:
-    // Members unique to the Enemy's AI
+    void updateMovementEnemy(sf::Time deltaTime, const sf::Window& window);
     sf::Vector2f mDirection;
-    float mLeftBound;
-    float mRightBound;
 };
 
 #endif //ENEMY_H

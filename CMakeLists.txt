@@ -54,7 +54,7 @@ find_package(SFML COMPONENTS Graphics Window System Audio REQUIRED)
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
 add_executable(${MAIN_EXECUTABLE_NAME}
     main.cpp
-        header/Weapons.h
+        header/Weapon.h
         header/Enemy.h
         header/Player.h
         header/Game.h
@@ -63,6 +63,10 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         source/Enemy.cpp
         header/Entity.h
         source/Entity.cpp
+        header/MeleeWeapon.h
+        header/RangedWeapon.h
+        source/Weapon.cpp
+        source/MeleeWeapon.cpp
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME}
@@ -101,5 +105,6 @@ endif()
 
 copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 copy_files(DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
+
 # copy_files(FILES tastatura.txt config.json DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 # copy_files(DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})

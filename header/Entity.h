@@ -11,7 +11,6 @@ public:
     Entity();
     virtual ~Entity() = default;
 
-    // A "pure virtual" update function.
     // The "= 0" means any class that inherits from Entity
     // MUST provide its own "update" function.
     virtual void update(sf::Time deltaTime, const sf::Window& window) = 0;

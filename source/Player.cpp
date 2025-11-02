@@ -28,9 +28,24 @@ void Player::update(sf::Time deltaTime, const sf::Window& mWindow)
     updateHealth(deltaTime);
 }
 
-// This function is identical to your original code.
-// It works perfectly by accessing mSprite, mMovementSpeed,
-// and mTexture from the Entity base class.
+
+sf::Vector2f Player::getPlayerPosition() const
+{
+    return mSprite.getPosition();
+}
+
+Player& Player::getInstance() {
+    static Player instance; // The one and only Player object
+    return instance;
+}
+
+sf::Vector2u Player::getTextureSize() const
+{
+    // Assuming your player's texture is also named mTexture
+    return mTexture.getSize();
+}
+
+
 void Player::updateMovement(sf::Time deltaTime, const sf::Window& mWindow)
 {
     sf::Vector2f movement(0.f, 0.f);
@@ -77,6 +92,11 @@ void Player::updateMovement(sf::Time deltaTime, const sf::Window& mWindow)
 
     mSprite.setPosition(position);
 }
+
+
+
+
+
 
 void Player::updateHealth(sf::Time deltaTime) {
     // Placeholder for health update logic

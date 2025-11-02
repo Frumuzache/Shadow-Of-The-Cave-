@@ -21,7 +21,6 @@ private:
     void update(sf::Time deltaTime);
     void render();
 
-    Player mPlayer;
     Enemy mEnemy;
     sf::Texture mBackgroundTexture;
     sf::Sprite mBackgroundSprite;

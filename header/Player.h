@@ -1,9 +1,10 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "Entity.h" // <-- Include the new base class
+#include "Entity.h"
 
-// Player "is-an" Entity
+#pragma once
+
 class Player : public Entity {
 public:
     Player();
@@ -12,15 +13,15 @@ public:
     // the pure virtual function from our parent (Entity)
     void update(sf::Time deltaTime, const sf::Window& window) override;
 
-    // render() is now inherited from Entity!
+    sf::Vector2f getPlayerPosition() const;
+
+    static Player& getInstance();
+    sf::Vector2u getTextureSize() const;
 
 private:
     // These functions are specific to the Player's update
     void updateMovement(sf::Time deltaTime, const sf::Window& window);
     void updateHealth(sf::Time deltaTime);
-
-    // mTexture, mSprite, and mMovementSpeed are
-    // now inherited from Entity!
 };
 
 #endif //PLAYER_H

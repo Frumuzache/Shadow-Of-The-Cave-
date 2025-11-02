@@ -1,20 +1,17 @@
 #include <SFML/Graphics.hpp>
-
 #include "../header/Game.h"
-#include <iostream>
 
 
 // Constructor
 Game::Game()
-    : mPlayer{},
-    mEnemy(100.f, 600.f, 400.f),
+    : mEnemy(100.f, 600.f, 400.f),
     mBackgroundTexture{},
     mBackgroundSprite(mBackgroundTexture),
-    mWindow(sf::VideoMode({800, 600}), "Shadow Of The Cave"),
+    mWindow(sf::VideoMode({1920, 1080}), "Shadow Of The Cave"),
     mClock{}
 
 {
-    mWindow.setFramerateLimit(60); // <--- ADD THIS LINE
+    mWindow.setFramerateLimit(120);
 
     if (!mBackgroundTexture.loadFromFile("../assets/background.png"))
         throw std::runtime_error("Failed to load background texture");
@@ -67,7 +64,7 @@ void Game::processEvents()
 
 // Function to update the game state
 void Game::update(sf::Time deltaTime) {
-    mPlayer.update(deltaTime, mWindow);
+    Player::getInstance().update(deltaTime, mWindow);
     mEnemy.update(deltaTime,mWindow);
 
 }
@@ -86,7 +83,7 @@ void Game::render()
     mWindow.draw(mBackgroundSprite);
 
     // Draw the player
-    mPlayer.render(mWindow);
+    Player::getInstance().render(mWindow);
 
     // Draw the enemy
     mEnemy.render(mWindow);
