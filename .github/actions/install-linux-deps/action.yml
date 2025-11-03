@@ -1,62 +1,35 @@
-name: 'Install common Linux dependencies'
-description: 'Install all required Linux dependencies for building and testing'
+name: "Install Linux deps for SFML 3"
+description: "Apt packages required to build SFML 3 via vcpkg on Ubuntu runners"
 
 runs:
   using: "composite"
   steps:
-    - name: Install All Linux Dependencies
+    - name: Apt update & base toolchain
       shell: bash
-      if: runner.os == 'Linux'
       run: |
         set -eux
-        sudo apt-get update -y
-        # Needed for add-apt-repository
-        sudo apt-get install -y --no-install-recommends software-properties-common
-        sudo add-apt-repository -y universe
-        sudo apt-get update -y
+        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          build-essential cmake ninja-build pkg-config \
+          git curl ca-certificates zip unzip tar
 
-        # --- THIS IS THE FIX ---
-        # Install SFML (unified or split)
-        if apt-cache show libsfml-dev >/dev/null 2>&1; then
-          echo "Installing SFML (libsfml-dev)"
-          sudo apt-get install -y --no-install-recommends libsfml-dev
-        else
-          echo "Installing legacy SFML split packages"
-          sudo apt-get install -y --no-install-recommends \
-            libsfml-audio-dev \
-            libsfml-graphics-dev \
-            libsfml-network-dev \
-            libsfml-system-dev \
-            libsfml-window-dev
-        fi
-        
-        # --- Install all other packages ---
-        echo "Installing common build, X11, and test dependencies"
-        sudo apt-get install -y --no-install-recommends \
-          ninja-build \
-          xdotool \
-          openbox \
-          xorg \
-          libxrandr-dev \
-          libxcursor-dev \
-          libudev-dev \
-          libopenal-dev \
-          libflac-dev \
-          libvorbis-dev \
-          libgl1-mesa-dev \
-          libegl1-mesa-dev \
-          libdrm-dev \
-          libgbm-dev \
-          libfreetype6-dev \
-          libxi-dev \
-          libxkbcommon-x11-0 \
-          libxcb-icccm4 \
-          libxcb-image0 \
-          libxcb-keysyms1 \
-          libxcb-randr0 \
-          libxcb-render-util0 \
-          libxcb-xinerama0 \
-          libxcb-xfixes0
+    - name: Compilers used by matrix (gcc-12/g++-12)
+      if: env.CC == 'gcc-12' || env.CXX == 'g++-12'
+      shell: bash
+      run: |
+        set -eux
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          gcc-12 g++-12
 
-        # https://github.com/llvm/llvm-project/issues/78354
-        sudo sysctl vm.mmap_rnd_bits=28 || true
+    # ---- SFML 3 system requirements on Ubuntu (per vcpkg/port + CMake output) ----
+    - name: X11 / OpenGL dev headers for SFML 3
+      shell: bash
+      run: |
+        set -eux
+        # From the error: libx11, libxi, libxrandr, libxcursor, libudev, opengl
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+
+        # Helpful extras some setups need (not strictly required but common):
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libxrender-dev libxinerama-dev libdrm-dev
