@@ -1,115 +1,98 @@
 cmake_minimum_required(VERSION 3.26)
 
-# NOTE: update executable name in .github/workflows/cmake.yml:25 when changing executable name in this file
-# for now, the project name is used as the executable name
-project(oop)
-# set(CMAKE_PROJECT_VERSION_MAJOR 0)
-# set(CMAKE_PROJECT_VERSION_MINOR 0)
-# set(CMAKE_PROJECT_VERSION_PATCH 1)
+# ---- Names (keep in sync with CI if you change them) ----
+set(MAIN_PROJECT_NAME "oop")
+set(MAIN_EXECUTABLE_NAME "${MAIN_PROJECT_NAME}")
 
+project(${MAIN_PROJECT_NAME} LANGUAGES CXX C)
+
+# ---- Languages / standards ----
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(cmake/Options.cmake)
+# ---- Helper modules (your own) ----
+include(cmake/Options.cmake)        # defines DESTINATION_DIR etc.
+include(cmake/CompilerFlags.cmake)  # defines set_custom_stdlib_and_sanitizers / set_compiler_flags
+include(cmake/CopyHelper.cmake)     # defines copy_files
 
-###############################################################################
+# ---- SFML 3 (system first, then fallback) ----
+# Prefer a system-installed SFML 3; otherwise fetch it.
+set(_want_sfml_components Graphics Window System Audio)
 
-# external dependencies with FetchContent
+find_package(SFML 3 QUIET COMPONENTS ${_want_sfml_components})
+if(NOT SFML_FOUND)
+  include(FetchContent)
+  # Avoid noisy re-configures
+  set(FETCHCONTENT_QUIET OFF)
+  set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-include(FetchContent)
-
-set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
-
-# din cauza SFML
-set(WARNINGS_AS_ERRORS OFF)
-
-# NOTE: Also update SFML_VERSION env var in .github/workflows/cmake.yml:84
-FetchContent_Declare(
-    SFML
+  FetchContent_Declare(
+    sfml
     GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG        2.6.1
-    # GIT_TAG        69ea0cd863aed1d4092b970b676924a716ff718b # 2.6.1
-    # GIT_TAG        origin/master
-    GIT_SHALLOW    1  # works only with branches or tags, not with arbitrary commit hashes
-)
-
-FetchContent_MakeAvailable(SFML)
-
-###############################################################################
-
-# external dependencies with find_package
-
-find_package(Threads REQUIRED)
-if(APPLE)
-elseif(UNIX)
-    find_package(X11)
+    GIT_TAG        3.0.0
+    GIT_SHALLOW    1
+  )
+  FetchContent_MakeAvailable(sfml)
 endif()
 
-###############################################################################
-
-# NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
+# ---- Sources ----
 add_executable(${MAIN_EXECUTABLE_NAME}
-    main.cpp
-        header/Weapon.h
-        header/Enemy.h
-        header/Player.h
-        header/Game.h
-        source/Game.cpp
-        source/Player.cpp
-        source/Enemy.cpp
-        header/Entity.h
-        source/Entity.cpp
-        header/MeleeWeapon.h
-        header/RangedWeapon.h
-        source/Weapon.cpp
-        source/MeleeWeapon.cpp
-        header/Level.h
-        source/Level.cpp
-        header/HUD.h
-        source/HUD.cpp
-        source/RangedWeapon.cpp
+  main.cpp
+  header/Weapon.h
+  header/Enemy.h
+  header/Player.h
+  header/Game.h
+  source/Game.cpp
+  source/Player.cpp
+  source/Enemy.cpp
+  header/Entity.h
+  source/Entity.cpp
+  header/MeleeWeapon.h
+  header/RangedWeapon.h
+  source/Weapon.cpp
+  source/MeleeWeapon.cpp
+  header/Level.h
+  source/Level.cpp
+  header/HUD.h
+  source/HUD.cpp
+  source/RangedWeapon.cpp
 )
 
-include(cmake/CompilerFlags.cmake)
+# ---- Compile options / warnings (portable defaults) ----
+if(MSVC)
+  target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE /W4 /permissive- /utf-8)
+else()
+  target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
-###############################################################################
+# ---- Link SFML (use modern imported targets) ----
+target_link_libraries(${MAIN_EXECUTABLE_NAME}
+  PRIVATE
+    SFML::Graphics
+    SFML::Window
+    SFML::System
+    SFML::Audio
+)
 
-# use SYSTEM so cppcheck and clang-tidy do not report warnings from these directories
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE generated/include)
-# target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ext/<SomeHppLib>/include)
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${SFML_SOURCE_DIR}/include)
-target_link_directories(${PROJECT_NAME} PRIVATE ${SFML_BINARY_DIR}/lib)
-target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-window sfml-system Threads::Threads)
+# ---- Your sanitizer / toolchain helpers (apply AFTER target exists) ----
+# The second argument 'false' matches your previous usage.
+set_custom_stdlib_and_sanitizers(${MAIN_EXECUTABLE_NAME} false)
 
+# Apply your compiler flags; RUN_SANITIZERS defaults to true, but we set it explicitly
+set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
+
+# ---- Install / runtime assets ----
+# Binaries to "bin" (DESTINATION_DIR is defined in cmake/Options.cmake)
+install(TARGETS ${MAIN_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
-elseif(UNIX)
-    target_link_libraries(${PROJECT_NAME} PRIVATE X11)
+  install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
 endif()
 
-###############################################################################
+# Copy runtime files alongside the built executable into ${DESTINATION_DIR}
+copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
+copy_files(DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 
-# copy binaries to "bin" folder; these are uploaded as artifacts on each release
-# DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
-install(TARGETS ${PROJECT_NAME} DESTINATION ${DESTINATION_DIR})
-if(APPLE)
-    install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
-endif()
-
-# copy dependent DLLs to build dir
-# see https://en.sfml-dev.org/forums/index.php?topic=28580.0
-# remove this if not using audio or if using SFML 3
-if (WIN32 AND SFML_BUILD_AUDIO)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         ${SFML_SOURCE_DIR}/extlibs/bin/x64/openal32.dll
-         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-    )
-endif()
-
-
-include(cmake/CopyHelper.cmake)
-copy_files(FILES tastatura.txt)
-# copy_files(FILES tastatura.txt config.json DIRECTORY images sounds)
-# copy_files(DIRECTORY images sounds)
+# If you later need Threads, keep this as an example:
+# find_package(Threads REQUIRED)
+# target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE Threads::Threads)
