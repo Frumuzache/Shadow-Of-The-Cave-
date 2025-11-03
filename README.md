@@ -1,25 +1,10 @@
-# Nu primesc notă pentru că nu am pus titlu și descriere
+# Shadow Of The Cave - The Game 
 
-### Folosiți template-ul corespunzător grupei voastre!
+In acest joc sunteti un triunghi (hopefully not, vedem daca pot crea un caracter mai bun) ce se afla intr-o pestera ce este compusa dintr-un sistem de camere generate diferit la fiecare joc. Pentru a progrsa in alta camera trebuie sa omorati toti inamicii din camera in care va aflati. Pentru a castiga trebuie sa explorati si sa curatati toate camerele. Fiecare inamic omorat, jucatorul va primi monezi pe care le poate folosi pentru a cumpara diferite tipuri de arme si diferite abilitati. De asemenea, pe harta se vor putea genra si crate-uri care vor putea oferi bani sau diferite iteme. 
 
-| Laborant  | Link template                                |
-|-----------|----------------------------------------------|
-| Dragoș B  | https://github.com/Ionnier/oop-template      |
-| Tiberiu M | https://github.com/MaximTiberiu/oop-template |
-| Marius MC | https://github.com/mcmarius/oop-template     |
+# Acknowledgement
 
-### Important!
-
-Aveți voie cu cod generat de modele de limbaj la care nu ați contribuit semnificativ doar în folder-ul `generated`.
-Codul generat pus "ca să fie"/pe care nu îl înțelegeți se punctează doar pentru puncte bonus, doar în contextul
-în care oferă funcționalități ajutătoare și doar dacă are sens.
-
-O cerință nu se consideră îndeplinită dacă este realizată doar prin cod generat.
-
-- **Fără cod de umplutură/fără sens!**
-- **Fără copy-paste!**
-- **Fără variabile globale!**
-- **Fără atribute publice!**
+Ideea acestui joc se bazeaza pe cea a lui DaniDev, prezentata in acest videoclip: https://www.youtube.com/watch?v=YMWnwBpUgoI&t=1s
 
 ### Tema 0
 
@@ -44,6 +29,7 @@ O cerință nu se consideră îndeplinită dacă este realizată doar prin cod g
 - [ ] minim 50-55% din codul propriu să fie C++, `.gitattributes` configurat corect
 - [ ] tag de `git`: de exemplu `v0.1`
 - [ ] serviciu de integrare continuă (CI) cu **toate bifele**; exemplu: GitHub Actions
+- [ ] code review #1 2 proiecte
 
 ## Tema 2
 
@@ -75,6 +61,7 @@ O cerință nu se consideră îndeplinită dacă este realizată doar prin cod g
   - noua derivată nu poate fi una existentă care a fost ștearsă și adăugată din nou
   - noua derivată va fi integrată în codul existent (adică va fi folosită, nu adăugată doar ca să fie)
 - [ ] tag de `git` pe commit cu **toate bifele**: de exemplu `v0.2`
+- [ ] code review #2 2 proiecte
 
 ## Tema 3
 
@@ -85,6 +72,7 @@ O cerință nu se consideră îndeplinită dacă este realizată doar prin cod g
 - [ ] minim 85% din codul propriu să fie C++
 <!-- - [ ] o specializare pe funcție/clasă șablon -->
 - [ ] tag de `git` pe commit cu **toate bifele**: de exemplu `v0.3` sau `v1.0`
+- [ ] code review #3 2 proiecte
 
 ## Instrucțiuni de compilare
 
@@ -92,31 +80,13 @@ Proiectul este configurat cu CMake.
 
 Instrucțiuni pentru terminal:
 
-0. Biblioteci necesare pe Linux (presupunem sistem de operare bazat pe Debian)
-```sh
-sudo apt-get update && \
-  sudo apt-get install libxrandr-dev \
-    libxcursor-dev \
-    libudev-dev \
-    libopenal-dev \
-    libflac-dev \
-    libvorbis-dev \
-    libgl1-mesa-dev \
-    libegl1-mesa-dev \
-    libdrm-dev \
-    libgbm-dev \
-    libfreetype6-dev
-```
-
-Dacă lipsesc și alte biblioteci, ștergeți folder-ul de build de la pasul 1 și reconfigurați proiectul după ce ați instalat ce lipsea.
-
 1. Pasul de configurare
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 # sau ./scripts/cmake.sh configure
 ```
 
-Sau pe Windows cu GCC:
+Sau pe Windows cu GCC folosind Git Bash:
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja
 # sau ./scripts/cmake.sh configure -g Ninja
@@ -148,6 +118,4 @@ conțin fișiere generate și nu ne ajută să le versionăm.
 
 ## Resurse
 
-- [SFML](https://github.com/SFML/SFML/tree/2.6.1) (Zlib)
-  - [OpenAL](https://openal-soft.org/) (LGPL): din cauza licenței, trebuie distribuită ca shared library
-- adăugați trimiteri către resursele externe care v-au ajutat sau pe care le-ați folosit
+- adăugați trimiteri **detaliate** către resursele externe care v-au ajutat sau pe care le-ați folosit
