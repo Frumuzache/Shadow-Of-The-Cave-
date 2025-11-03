@@ -1,5 +1,5 @@
 name: "Install Linux deps for SFML 3"
-description: "Apt packages required to build SFML 3 via vcpkg on Ubuntu runners"
+description: "Packages required to build SFML 3 via vcpkg on Ubuntu"
 
 runs:
   using: "composite"
@@ -10,10 +10,10 @@ runs:
         set -eux
         sudo apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-          build-essential cmake ninja-build pkg-config \
-          git curl ca-certificates zip unzip tar
+          build-essential cmake ninja-build pkg-config git curl ca-certificates zip unzip tar
 
-    - name: Compilers used by matrix (gcc-12/g++-12)
+    # Your matrix uses gcc-12/g++-12
+    - name: Compilers (gcc-12/g++-12)
       if: env.CC == 'gcc-12' || env.CXX == 'g++-12'
       shell: bash
       run: |
@@ -21,15 +21,22 @@ runs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
           gcc-12 g++-12
 
-    # ---- SFML 3 system requirements on Ubuntu (per vcpkg/port + CMake output) ----
+    # ---- SFML 3 system requirements on Ubuntu (superset) ----
     - name: X11 / OpenGL dev headers for SFML 3
       shell: bash
       run: |
         set -eux
-        # From the error: libx11, libxi, libxrandr, libxcursor, libudev, opengl
+        # Minimal list from the error + common extras SFML 3 needs in CI:
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-          libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+          libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev \
+          libxrender-dev libxinerama-dev libdrm-dev \
+          libglu1-mesa-dev xorg-dev
 
-        # Helpful extras some setups need (not strictly required but common):
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-          libxrender-dev libxinerama-dev libdrm-dev
+    # Ensure vcpkg binary cache exists (avoids the earlier "must be a directory" error)
+    - name: Prepare vcpkg binary cache dir
+      shell: bash
+      run: |
+        set -eux
+        # Use a repo-local cache that works on Linux
+        mkdir -p "${GITHUB_WORKSPACE}/.vcpkg-bincache"
+        echo "VCPKG_DEFAULT_BINARY_CACHE=${GITHUB_WORKSPACE}/.vcpkg-bincache" >> "$GITHUB_ENV"
