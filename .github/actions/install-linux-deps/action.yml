@@ -26,8 +26,8 @@ runs:
       shell: bash
       run: |
         set -eux
-        # Am eliminat --no-install-recommends și am adăugat doar libsfml-dev
-        # Acesta va aduce automat componentele graphics și audio.
+        # Am eliminat --no-install-recommends din ACEASTĂ comandă
+        # pentru a permite instalarea componentelor recomandate ale libsfml-dev (Audio, Graphics)
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
           libsfml-dev \
           libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev \
