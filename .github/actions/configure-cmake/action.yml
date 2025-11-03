@@ -12,6 +12,17 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # ---- Linux: install SFML build deps (fixes missing Xi/X11) ----
+    - name: Install Linux build deps (SFML/X11)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libx11-dev libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+          libudev-dev libgl1-mesa-dev pkg-config libopenal-dev libsndfile1-dev
+
     # Cache third-party deps pulled into the build tree (optional)
     - name: Cache deps
       uses: actions/cache@v4
@@ -87,7 +98,7 @@ runs:
           -i "${GITHUB_WORKSPACE}/artifacts" \
           -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
 
-    # ---- Configure (everything else, incl. Windows MSVC) ----
+    # ---- Configure (everything else, incl. Linux & Windows MSVC) ----
     - name: Configure CMake
       shell: bash
       if: ${{ !(runner.os == 'Windows' && matrix.cxx == 'g++') }}
