@@ -1,89 +1,45 @@
 name: 'Install packages'
-description: 'Install required packages for building the project'
+description: 'Install required packages'
 
 runs:
   using: "composite"
   steps:
-    # -------------------------
-    # 🐧 Linux Dependencies
-    # -------------------------
-    - name: Install Linux Dependencies
+    # Common Linux dependencies
+    - name: Install common Linux Dependencies
       if: runner.os == 'Linux'
       uses: ./.github/actions/install-linux-deps
+
+    - name: More Linux Dependencies
+      shell: bash
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get install ninja-build xdotool \
+          openbox \
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+
+        # https://github.com/llvm/llvm-project/issues/78354
+        sudo sysctl vm.mmap_rnd_bits=28
+
+    # Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
+    # - name: Install Clang ${{ matrix.clang_ver }}
+    #   shell: bash
+    #   if: runner.os == 'Linux' && matrix.runs_msan == true
+    #   run: |
+    #     wget https://apt.llvm.org/llvm.sh
+    #     chmod +x ./llvm.sh
+    #     sudo ./llvm.sh ${{ matrix.clang_ver }}
+
+    # - name: Install libc++ (Linux Clang ${{ matrix.clang_ver }})
+    #   shell: bash
+    #   if: runner.os == 'Linux' && matrix.runs_msan == true
+    #   run: |
+    #     # sudo apt-get update
+    #     sudo apt-get install --no-install-recommends libc++-${{ matrix.clang_ver }}-dev libc++abi-${{ matrix.clang_ver }}-dev
 
     - name: Install valgrind
       shell: bash
       if: runner.os == 'Linux' && matrix.runs_valgrind == true
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends valgrind
-
-    # -------------------------
-    # 🍏 macOS Dependencies
-    # -------------------------
-    - name: Install macOS Dependencies
-      shell: bash
-      if: runner.os == 'macOS'
-      run: |
-        set -eux
-        brew update
-        brew install sfml ninja
-
-    # -------------------------
-    # 🪟 Windows Dependencies
-    # -------------------------
-    - name: Install Windows Dependencies (Ninja)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: |
-        choco install ninja
-
-    # Create a vcpkg binary cache dir on each OS (path differs)
-    - name: Configure vcpkg binary cache (Linux/macOS)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
-      shell: bash
-      run: |
-        set -eux
-        mkdir -p "${GITHUB_WORKSPACE}/.vcpkg-bincache"
-        echo "VCPKG_DEFAULT_BINARY_CACHE=${GITHUB_WORKSPACE}/.vcpkg-bincache" >> "$GITHUB_ENV"
-
-    - name: Configure vcpkg binary cache (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        set -eux
-        VCPKG_CACHE="${RUNNER_TEMP}/vcpkg-bincache"
-        mkdir -p "$VCPKG_CACHE"
-        echo "VCPKG_DEFAULT_BINARY_CACHE=$VCPKG_CACHE" >> "$GITHUB_ENV"
-
-    - name: Cache vcpkg
-      if: runner.os == 'Windows'
-      uses: actions/cache@v4
-      id: cache-vcpkg
-      with:
-        path: |
-          vcpkg
-          ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-        key: vcpkg-cache-${{ runner.os }}-${{ matrix.cxx }}
-
-    - name: Install Windows Dependencies (vcpkg)
-      shell: bash
-      if: runner.os == 'Windows' # Modificat: rulează pe toate job-urile Windows
-      run: |
-        set -eux
-        if [[ ! -d "vcpkg" || "${{ steps.cache-vcpkg.outputs.cache-hit }}" != "true" ]]; then
-          echo "Cloning vcpkg..."
-          git clone https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat
-        else
-          echo "vcpkg cache restored."
-        fi
-        
-        # Instalează triplet-ul corect pentru compilator
-        if [[ "${{ matrix.cxx }}" == "cl" ]]; then
-          ./vcpkg/vcpkg install sfml:x64-windows
-        elif [[ "${{ matrix.cxx }}" == "g++" ]]; then
-          ./vcpkg/vcpkg install sfml:x64-mingw-dynamic
-        fi
-
-        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        # sudo apt-get update
+        sudo apt-get install --no-install-recommends valgrind
