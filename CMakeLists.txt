@@ -12,11 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ---- Your helper modules ----
+# keep Options/CopyHelper early (they don't need the target to exist)
 include(cmake/Options.cmake)        # defines DESTINATION_DIR, etc.
-include(cmake/CompilerFlags.cmake)  # may define set_custom_stdlib_and_sanitizers/set_compiler_flags
 include(cmake/CopyHelper.cmake)     # defines copy_files
 
-# ---- SFML 3 (system first, then fallback) ----
+# ---- SFML 3 (system first, then fallback via FetchContent) ----
 set(_want_sfml_components Graphics Window System Audio)
 find_package(SFML 3 QUIET COMPONENTS ${_want_sfml_components})
 if(NOT SFML_FOUND)
@@ -24,38 +24,38 @@ if(NOT SFML_FOUND)
   set(FETCHCONTENT_QUIET OFF)
   set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
   FetchContent_Declare(
-    sfml
-    GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG        3.0.0
-    GIT_SHALLOW    1
+          sfml
+          GIT_REPOSITORY https://github.com/SFML/SFML.git
+          GIT_TAG        3.0.0
+          GIT_SHALLOW    1
   )
   FetchContent_MakeAvailable(sfml)
 endif()
 
 # ---- Sources ----
 add_executable(${MAIN_EXECUTABLE_NAME}
-  main.cpp
-  header/Weapon.h
-  header/Enemy.h
-  header/Player.h
-  header/Game.h
-  source/Game.cpp
-  source/Player.cpp
-  source/Enemy.cpp
-  header/Entity.h
-  source/Entity.cpp
-  header/MeleeWeapon.h
-  header/RangedWeapon.h
-  source/Weapon.cpp
-  source/MeleeWeapon.cpp
-  header/Level.h
-  source/Level.cpp
-  header/HUD.h
-  source/HUD.cpp
-  source/RangedWeapon.cpp
+        main.cpp
+        header/Weapon.h
+        header/Enemy.h
+        header/Player.h
+        header/Game.h
+        source/Game.cpp
+        source/Player.cpp
+        source/Enemy.cpp
+        header/Entity.h
+        source/Entity.cpp
+        header/MeleeWeapon.h
+        header/RangedWeapon.h
+        source/Weapon.cpp
+        source/MeleeWeapon.cpp
+        header/Level.h
+        source/Level.cpp
+        header/HUD.h
+        source/HUD.cpp
+        source/RangedWeapon.cpp
 )
 
-# ---- Default warnings (safe baseline) ----
+# ---- Default warnings (safe baseline, immediate) ----
 if(MSVC)
   target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE /W4 /permissive- /utf-8)
 else()
@@ -64,14 +64,17 @@ endif()
 
 # ---- Link SFML (imported targets) ----
 target_link_libraries(${MAIN_EXECUTABLE_NAME}
-  PRIVATE
-    SFML::Graphics
-    SFML::Window
-    SFML::System
-    SFML::Audio
+        PRIVATE
+        SFML::Graphics
+        SFML::Window
+        SFML::System
+        SFML::Audio
 )
 
-# ---- Toolchain / sanitizers helpers (guarded) ----
+# ---- Toolchain / sanitizers helpers (include AFTER target exists) ----
+# move CompilerFlags.cmake here so any target_* usage inside sees the target
+include(cmake/CompilerFlags.cmake)  # may define set_custom_stdlib_and_sanitizers/set_compiler_flags
+
 if(COMMAND set_custom_stdlib_and_sanitizers)
   set_custom_stdlib_and_sanitizers(${MAIN_EXECUTABLE_NAME} false)
 else()
@@ -79,14 +82,11 @@ else()
 endif()
 
 if(COMMAND set_compiler_flags)
+  # if your helper expects args like RUN_SANITIZERS and TARGET_NAMES, keep them
   set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
 else()
   message(WARNING "set_compiler_flags() not found; applying default warnings only.")
-  if(MSVC)
-    target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE /W4 /permissive- /utf-8)
-  else()
-    target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-  endif()
+  # (we already applied a baseline above)
 endif()
 
 # ---- Install / assets ----
@@ -95,5 +95,6 @@ if(APPLE)
   install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
 endif()
 
+# copy helper usage (build dir + install dir)
 copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 copy_files(DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})

@@ -6,15 +6,14 @@
 
 HUD::HUD(std::string fontPath)
     : mFontPath(std::move(fontPath)),
-      mFont(),                      // <-- FIX 1: Default-construct mFont
-      mPlayerHealthText(mFont)      // <-- FIX 1: Pass mFont to sf::Text's constructor
+      mFont(),
+      mPlayerHealthText(mFont)
 {
     // Now mFont exists and mPlayerHealthText has a reference to it.
     // We can now load the font data.
     if (!mFont.openFromFile(mFontPath))
         throw std::runtime_error("Failed to load font: " + mFontPath);
 
-    // mPlayerHealthText.setFont(mFont); // <-- This is no longer needed
     mPlayerHealthText.setCharacterSize(24);
     mPlayerHealthText.setFillColor(sf::Color::White);
     mPlayerHealthText.setPosition({10.f, 10.f});

@@ -88,13 +88,13 @@ void Enemy::updateMovementEnemy(sf::Time deltaTime, sf::Window const& window) {
 
 void Enemy::update(sf::Time deltaTime, const sf::Window& window) {
     updateMovementEnemy(deltaTime, window);
-    // Removed call to UpdateHealthEnemy
+
 }
 
 // --- operator<< (Composition of calls) ---
 std::ostream& operator<<(std::ostream& os, const Enemy& enemy) {
     // 1. Call Entity::operator<<
     os << "--- ENEMY ---\n"
-       << static_cast<const Entity&>(enemy); // Call base operator<<
+       << static_cast<const Entity&>(enemy);
     return os;
 }

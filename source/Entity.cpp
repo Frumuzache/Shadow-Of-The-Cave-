@@ -8,7 +8,7 @@ Entity::Entity()
       maxHealth(100.f),
       currentHealth(100.f)
 {
-    // Default constructor
+
 }
 
 // Parameterized constructor
@@ -19,7 +19,7 @@ Entity::Entity(float speed, float health)
       maxHealth(health),
       currentHealth(health)
 {
-    // Initialization list does all the work
+
 }
 
 // --- const Getters ---
