@@ -55,7 +55,7 @@ add_executable(${MAIN_EXECUTABLE_NAME}
   source/RangedWeapon.cpp
 )
 
-# ---- Default warnings (will be overridden if your helper applies its own) ----
+# ---- Default warnings (safe baseline) ----
 if(MSVC)
   target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE /W4 /permissive- /utf-8)
 else()
@@ -71,12 +71,12 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME}
     SFML::Audio
 )
 
-# ---- Toolchain / sanitizers helpers (safe guards) ----
+# ---- Toolchain / sanitizers helpers (guarded) ----
 if(COMMAND set_custom_stdlib_and_sanitizers)
   set_custom_stdlib_and_sanitizers(${MAIN_EXECUTABLE_NAME} false)
 else()
   message(STATUS "set_custom_stdlib_and_sanitizers() not found; skipping.")
-fi()
+endif()
 
 if(COMMAND set_compiler_flags)
   set_compiler_flags(RUN_SANITIZERS TRUE TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
