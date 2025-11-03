@@ -49,7 +49,8 @@ runs:
           libxrandr-dev libxcursor-dev libudev-dev \
           libopenal-dev libflac-dev libvorbis-dev \
           libgl1-mesa-dev libegl1-mesa-dev libdrm-dev \
-          libgbm-dev libfreetype6-dev libxi-dev xorg
+          libgbm-dev libfreetype6-dev libxi-dev xorg \
+          libharfbuzz-dev libfontconfig1-dev
 
         git clone --branch master --depth=1 https://github.com/SFML/SFML.git
         cmake -S SFML -B SFML/build -DSFML_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release
