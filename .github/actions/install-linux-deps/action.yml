@@ -26,14 +26,11 @@ runs:
       shell: bash
       run: |
         set -eux
-        # Instalează EXPLICIT fiecare componentă SFML necesară
-        # Acest lucru evită problemele cu pachetele "recomandate"
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        # Rulăm update AICI și eliminăm --no-install-recommends
+        # Păstrăm DOAR libsfml-dev, care va aduce componentele
+        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
           libsfml-dev \
-          libsfml-system-dev \
-          libsfml-window-dev \
-          libsfml-graphics-dev \
-          libsfml-audio-dev \
           libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev \
           libxrender-dev libxinerama-dev libdrm-dev \
           libglu1-mesa-dev xorg-dev
