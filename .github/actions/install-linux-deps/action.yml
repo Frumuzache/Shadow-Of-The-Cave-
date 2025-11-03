@@ -5,7 +5,17 @@ runs:
   steps:
     - run: |
         sudo apt-get update
-        sudo apt-get install --no-install-recommends \
+        # 1. Instalează pachetul necesar pentru a adăuga depozite
+        sudo apt-get install -y --no-install-recommends software-properties-common
+        
+        # 2. Adaugă depozitul 'universe'
+        sudo add-apt-repository universe
+        
+        # 3. Rulează update DIN NOU pentru a încărca lista de pachete din 'universe'
+        sudo apt-get update
+        
+        # 4. Acum instalează pachetele
+        sudo apt-get install -y --no-install-recommends \
           libsfml-system-dev \
           libsfml-window-dev \
           libsfml-graphics-dev \
