@@ -1,89 +1,47 @@
 name: 'Install packages'
-description: 'Install required packages for building the project (SFML 3 via vcpkg on all OSes)'
+description: 'Install required packages for building the project'
 
 runs:
   using: "composite"
   steps:
-    # --------------------------------
-    # Common: set up paths & caching
-    # --------------------------------
-    - name: Define vcpkg env vars
+    # -------------------------
+    # 🐧 Linux Dependencies (SFML 3 via vcpkg)
+    # -------------------------
+    - name: Define vcpkg env vars (Linux)
+      if: runner.os == 'Linux'
       shell: bash
       run: |
         set -eux
-        # Where vcpkg will live in the workspace
         echo "VCPKG_ROOT=${GITHUB_WORKSPACE}/vcpkg" >> "$GITHUB_ENV"
-        # Toolchain file used by CMake
         echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
-        # Binary cache to speed up subsequent runs
         echo "VCPKG_DEFAULT_BINARY_CACHE=${GITHUB_WORKSPACE}/.vcpkg-bincache" >> "$GITHUB_ENV"
 
-    - name: Cache vcpkg + binary cache
+    - name: Ensure vcpkg binary cache dir (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -eux
+        mkdir -p "${GITHUB_WORKSPACE}/.vcpkg-bincache"
+
+    - name: Cache vcpkg + binary cache (Linux)
+      if: runner.os == 'Linux'
       uses: actions/cache@v4
       with:
         path: |
           ${{ env.VCPKG_ROOT }}
           ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-        key: vcpkg-${{ runner.os }}-${{ matrix.cxx || 'default' }}-sfml3
+        key: vcpkg-${{ runner.os }}-x64-linux-sfml3
 
-    # --------------------------------
-    # Linux
-    # --------------------------------
-    - name: Install Linux build tools (no SFML from apt!)
+    - name: Bootstrap vcpkg (Linux)
       if: runner.os == 'Linux'
       shell: bash
       run: |
         set -eux
-        sudo apt-get update
-        # Basic build deps and Ninja (keep SFML OUT of apt to avoid SFML 2)
-        sudo apt-get install -y --no-install-recommends build-essential ninja-build git curl zip unzip pkg-config
-        # Optional: for valgrind matrix
-        if [ "${{ matrix.runs_valgrind || '' }}" = "true" ]; then
-          sudo apt-get install -y --no-install-recommends valgrind
-        fi
-
-    # --------------------------------
-    # macOS
-    # --------------------------------
-    - name: Install macOS build tools
-      if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        set -eux
-        brew update
-        brew install ninja git
-
-    # --------------------------------
-    # Windows
-    # --------------------------------
-    - name: Install Windows build tools
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        choco install ninja -y
-
-    # --------------------------------
-    # vcpkg bootstrap (all OSes)
-    # --------------------------------
-    - name: Bootstrap vcpkg
-      shell: bash
-      run: |
-        set -eux
-        if [ ! -d "${VCPKG_ROOT}" ]; then
+        if [[ ! -d "${VCPKG_ROOT}" ]]; then
           git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}"
+          "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics
         fi
-        pushd "${VCPKG_ROOT}"
-        git pull --ff-only || true
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          ./bootstrap-vcpkg.bat
-        else
-          ./bootstrap-vcpkg.sh
-        fi
-        popd
 
-    # --------------------------------
-    # Install SFML 3 via vcpkg (triplet per OS)
-    # --------------------------------
     - name: Install SFML 3 (Linux)
       if: runner.os == 'Linux'
       shell: bash
@@ -91,12 +49,70 @@ runs:
         set -eux
         "${VCPKG_ROOT}/vcpkg" install sfml:x64-linux
 
-    - name: Install SFML 3 (macOS)
+    - name: Install Valgrind (Linux valgrind job only)
+      if: runner.os == 'Linux' && matrix.runs_valgrind == true
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends valgrind
+
+    # -------------------------
+    # 🍏 macOS Dependencies (Homebrew)
+    # -------------------------
+    - name: Install macOS Dependencies
       if: runner.os == 'macOS'
       shell: bash
       run: |
         set -eux
-        "${VCPKG_ROOT}/vcpkg" install sfml:x64-osx
+        brew update
+        # Homebrew's 'sfml' formula may lag; keep as-is if your project fetches SFML 3 via CMake,
+        # otherwise consider switching macOS to vcpkg like Linux/Windows MSVC.
+        brew install sfml ninja
+
+    # -------------------------
+    # 🪟 Windows Dependencies
+    # -------------------------
+    - name: Install Ninja (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        choco install ninja -y
+
+    # ----- Windows + MSVC (use vcpkg + SFML 3) -----
+    - name: Define vcpkg env vars (Windows MSVC)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      shell: bash
+      run: |
+        set -eux
+        echo "VCPKG_ROOT=${GITHUB_WORKSPACE}/vcpkg" >> "$GITHUB_ENV"
+        echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
+        echo "VCPKG_DEFAULT_BINARY_CACHE=${GITHUB_WORKSPACE}/.vcpkg-bincache" >> "$GITHUB_ENV"
+
+    - name: Ensure vcpkg binary cache dir (Windows MSVC)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      shell: bash
+      run: |
+        set -eux
+        mkdir -p "${GITHUB_WORKSPACE}/.vcpkg-bincache"
+
+    - name: Cache vcpkg + binary cache (Windows MSVC)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.VCPKG_ROOT }}
+          ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        key: vcpkg-${{ runner.os }}-x64-windows-msvc-sfml3
+
+    - name: Bootstrap vcpkg (Windows MSVC)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      shell: bash
+      run: |
+        set -eux
+        if [[ ! -d "${VCPKG_ROOT}" ]]; then
+          git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}"
+          "${VCPKG_ROOT}/bootstrap-vcpkg.bat" -disableMetrics
+        fi
 
     - name: Install SFML 3 (Windows MSVC)
       if: runner.os == 'Windows' && matrix.cxx == 'cl'
@@ -105,10 +121,6 @@ runs:
         set -eux
         "${VCPKG_ROOT}/vcpkg" install sfml:x64-windows
 
-    - name: Install SFML 3 (Windows MinGW)
-      if: runner.os == 'Windows' && matrix.cxx != 'cl'
-      shell: bash
-      run: |
-        set -eux
-        # MinGW triplet (static runtime by default). Adjust to x64-mingw-dynamic if you need DLLs.
-        "${VCPKG_ROOT}/vcpkg" install sfml:x64-mingw-static
+    # ----- Windows + MinGW (NO vcpkg; avoid leaking toolchain file) -----
+    # We intentionally do NOT set VCPKG_TOOLCHAIN_FILE for MinGW jobs.
+    # Your CMake should either fetch SFML 3, or you provide prebuilt libs for MinGW.
