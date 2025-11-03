@@ -68,7 +68,7 @@ runs:
 
     - name: Install Windows Dependencies (vcpkg)
       shell: bash
-      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      if: runner.os == 'Windows' # Modificat: rulează pe toate job-urile Windows
       run: |
         set -eux
         if [[ ! -d "vcpkg" || "${{ steps.cache-vcpkg.outputs.cache-hit }}" != "true" ]]; then
@@ -78,5 +78,12 @@ runs:
         else
           echo "vcpkg cache restored."
         fi
-        ./vcpkg/vcpkg install sfml:x64-windows
+        
+        # Instalează triplet-ul corect pentru compilator
+        if [[ "${{ matrix.cxx }}" == "cl" ]]; then
+          ./vcpkg/vcpkg install sfml:x64-windows
+        elif [[ "${{ matrix.cxx }}" == "g++" ]]; then
+          ./vcpkg/vcpkg install sfml:x64-mingw-dynamic
+        fi
+
         echo "VCPKG_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
