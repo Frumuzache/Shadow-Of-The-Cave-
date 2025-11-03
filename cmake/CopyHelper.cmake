@@ -1,31 +1,45 @@
-# helper function to copy files to build directory and install directory without duplicating file names across commands
-function(copy_files)
-    set(options OPTIONAL FAST)
-    set(oneValueArgs)
-    set(multiValueArgs FILES DIRECTORY)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "${options}" "${oneValueArgs}" "${multiValueArgs}")
+# target definitions
 
-    # copy files to build dir
-    foreach(file ${ARG_FILES})
-        add_custom_command(
-            TARGET ${PROJECT_NAME} POST_BUILD
-            COMMENT "Copying ${file}..."
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/${file} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-            # ${CMAKE_CURRENT_BINARY_DIR})
-    endforeach()
+if(GITHUB_ACTIONS)
+    message("NOTE: GITHUB_ACTIONS defined")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GITHUB_ACTIONS)
+endif()
 
-    # copy folders to build dir
-    foreach(dir ${ARG_DIRECTORY})
-        add_custom_command(
-            TARGET ${PROJECT_NAME} POST_BUILD
-            COMMENT "Copying directory ${dir}..."
-            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-            ${CMAKE_SOURCE_DIR}/${dir} $<TARGET_FILE_DIR:${PROJECT_NAME}>/${dir})
-            # ${CMAKE_CURRENT_BINARY_DIR}/${dir})
-    endforeach()
+###############################################################################
 
-    # copy files and folders to install dir
-    install(FILES ${ARG_FILES} DESTINATION ${DESTINATION_DIR})
-    install(DIRECTORY ${ARG_DIRECTORY} DESTINATION ${DESTINATION_DIR})
-endfunction()
+if(PROJECT_WARNINGS_AS_ERRORS)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY COMPILE_WARNING_AS_ERROR ON)
+endif()
+
+# custom compiler flags
+message("Compiler: ${CMAKE_CXX_COMPILER_ID} version ${CMAKE_CXX_COMPILER_VERSION}")
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive- /wd4244 /wd4267 /wd4996 /external:anglebrackets /external:W0 /utf-8 /MP)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+###############################################################################
+
+# sanitizers
+
+if("${ARG_RUN_SANITIZERS}" STREQUAL "TRUE")
+
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    else()
+        set_custom_stdlib_and_sanitizers(cpr false)
+    endif()
+    set_custom_stdlib_and_sanitizers(${TARGET_NAME} true)
+endif ()
+
+include(cmake/CustomStdlibAndSanitizers.cmake)
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+else()
+    set_custom_stdlib_and_sanitizers(sfml-system false)
+    set_custom_stdlib_and_sanitizers(sfml-window false)
+    set_custom_stdlib_and_sanitizers(sfml-graphics false)
+    set_custom_stdlib_and_sanitizers(sfml-audio false)
+endif()
+
+set_custom_stdlib_and_sanitizers(${PROJECT_NAME} true)
