@@ -6,6 +6,12 @@ runs:
     - run: |
         sudo apt-get update
         sudo apt-get install --no-install-recommends \
+          # Adăugați componentele SFML aici:
+          libsfml-system-dev \
+          libsfml-window-dev \
+          libsfml-graphics-dev \
+          libsfml-audio-dev \
+          # Restul dependențelor:
           libxrandr-dev \
           libxcursor-dev \
           libudev-dev \
