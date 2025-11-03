@@ -22,7 +22,7 @@ on:
 env:
   BUILD_TYPE: ${{ inputs.build_type || 'Debug' }}
   # NOTE: update executable name if it is changed in CMakeLists.txt
-  EXECUTABLE_NAME: "oop"
+  EXECUTABLE_NAME: "DumbHack-Survival"
   INPUT_FILENAME: "tastatura.txt"
   BIN_DIR: "bin"       # update in cmake/Options.cmake:6 if changing name here
   BUILD_DIR: "build"
@@ -119,7 +119,7 @@ jobs:
             c: gcc-12
             cxx: g++-12
             name: "ASan: Ubuntu 22.04 GCC 12"
-            cmake_flags: "-DUSE_ASAN=ON -DBUILD_SHARED_LIBS=FALSE"
+            cmake_flags: "-DUSE_ASAN=ON -DBUILD_SHARED_LIBS=OFF"
             cmake_generator: Ninja
             # This env runs address sanitizers
             runs_asan: true
@@ -130,7 +130,7 @@ jobs:
             c: gcc-12
             cxx: g++-12
             name: "Valgrind: Ubuntu 22.04 GCC 12"
-            cmake_flags: -DBUILD_SHARED_LIBS=FALSE
+            cmake_flags: "-DBUILD_SHARED_LIBS=OFF"
             cmake_generator: Ninja
             # This env runs valgrind
             runs_valgrind: true
@@ -172,6 +172,23 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Ensure Xcode is active
+        if: runner.os == 'macOS'
+        run: sudo xcode-select --reset
+
+      - name: Accept Xcode license
+        if: runner.os == 'macOS'
+        run: sudo xcodebuild -license accept
+
+      - name: Setup MSVC environment
+        if: runner.os == 'Windows' && matrix.cxx == 'cl'
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Check PATH
+        if: runner.os == 'Windows' && matrix.cxx == 'cl'
+        run: echo $PATH
+
 
       - name: Set timestamp and zip name
         run: |
