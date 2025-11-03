@@ -12,7 +12,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Cache third-party deps from the build tree (optional but handy)
+    # Cache third-party deps pulled into the build tree (optional)
     - name: Cache deps
       uses: actions/cache@v4
       id: cache-deps
@@ -32,6 +32,7 @@ runs:
         key: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-${{ hashFiles('CMakeLists.txt') }}
         restore-keys: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-
 
+    # ---- Windows: MinGW toolchain path (for matrix.cxx == g++) ----
     - name: Cache MinGW
       uses: actions/cache@v4
       id: cache-mingw
@@ -52,8 +53,24 @@ runs:
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'g++' && steps.cache-mingw.outputs.cache-hit != 'true'
       run: |
-        7z x compiler/${{ steps.download-mingw-gcc.outputs.filename }} -ogcc
+        7z x "compiler/${{ steps.download-mingw-gcc.outputs.filename }}" -ogcc
 
+    # ---- Windows: MSVC environment (for matrix.cxx == cl) ----
+    - name: Setup MSVC dev cmd
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Select MSVC compiler (set CC/CXX)
+      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "CC=cl"  >> "$GITHUB_ENV"
+        echo "CXX=cl" >> "$GITHUB_ENV"
+
+    # ---- Configure (Windows MinGW) ----
     - name: Configure CMake (MinGW)
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
@@ -70,6 +87,7 @@ runs:
           -i "${GITHUB_WORKSPACE}/artifacts" \
           -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
 
+    # ---- Configure (everything else, incl. Windows MSVC) ----
     - name: Configure CMake
       shell: bash
       if: ${{ !(runner.os == 'Windows' && matrix.cxx == 'g++') }}
