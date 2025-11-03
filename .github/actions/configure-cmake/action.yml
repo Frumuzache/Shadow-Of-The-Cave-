@@ -12,19 +12,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Uncomment when using external dependencies, so they will be cached
+    # Cache third-party deps from the build tree (optional but handy)
     - name: Cache deps
       uses: actions/cache@v4
       id: cache-deps
-      # make the key depend on the dependency version
       with:
         path: |
           ${{ env.BUILD_DIR }}/_deps
         key: cache-${{ matrix.cmake_generator }}-${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-${{ env.BUILD_TYPE }}-${{ env.SFML_VERSION }}
 
-    # NOTE: GH Actions does not allow updating the cache yet
-    # Using the workaround found here: https://github.com/actions/cache/issues/171
-    # Since this cache is small, it should not fill the cache too much
     - name: Cache Ninja deps
       uses: actions/cache@v4
       if: matrix.cmake_generator == 'Ninja'
@@ -62,23 +58,29 @@ runs:
       shell: bash
       if: runner.os == 'Windows' && matrix.cxx == 'g++'
       run: |
+        set -euo pipefail
         PATH="$(pwd)/gcc/mingw64/bin:${PATH}"
-        # because GH Actions does not properly prepend to $PATH and still chooses VM gcc
-        export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
-        bash ./scripts/cmake.sh configure -s ${GITHUB_WORKSPACE} -b ${{ env.BUILD_DIR }} \
-          -t ${{ env.BUILD_TYPE }} \
-          -i ${GITHUB_WORKSPACE}/artifacts \
-          -c "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
+        GEN="${{ matrix.cmake_generator }}"
+        if [ -z "${GEN}" ]; then GEN="Ninja"; fi
+        bash ./scripts/cmake.sh configure \
+          -s "${GITHUB_WORKSPACE}" \
+          -b "${{ env.BUILD_DIR }}" \
+          -g "${GEN}" \
+          -c "${{ env.BUILD_TYPE }}" \
+          -i "${GITHUB_WORKSPACE}/artifacts" \
+          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
 
     - name: Configure CMake
       shell: bash
       if: ${{ !(runner.os == 'Windows' && matrix.cxx == 'g++') }}
       run: |
-        export CMAKE_GENERATOR=${{ matrix.cmake_generator }}
-        bash ./scripts/cmake.sh configure -s ${GITHUB_WORKSPACE} -b ${{ env.BUILD_DIR }} \
-          -t ${{ env.BUILD_TYPE }} \
-          -i ${GITHUB_WORKSPACE}/artifacts \
-          -c "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
-
-# https://docs.github.com/en/actions/creating-actions/creating-a-composite-action
-# https://github.com/GuillaumeFalourd/poc-github-actions/blob/main/.github/workflows/36-local-action.yml
+        set -euo pipefail
+        GEN="${{ matrix.cmake_generator }}"
+        if [ -z "${GEN}" ]; then GEN="Ninja"; fi
+        bash ./scripts/cmake.sh configure \
+          -s "${GITHUB_WORKSPACE}" \
+          -b "${{ env.BUILD_DIR }}" \
+          -g "${GEN}" \
+          -c "${{ env.BUILD_TYPE }}" \
+          -i "${GITHUB_WORKSPACE}/artifacts" \
+          -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}"
