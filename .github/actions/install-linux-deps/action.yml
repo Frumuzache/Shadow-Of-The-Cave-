@@ -1,20 +1,21 @@
-- name: Build and install SFML 3 from source
-  shell: bash
-  run: |
-    set -euxo pipefail
-    sudo apt-get update
-    sudo apt-get install -y --no-install-recommends \
-      git cmake g++ make pkg-config \
-      libxrandr-dev libxcursor-dev libudev-dev \
-      libopenal-dev libflac-dev libvorbis-dev \
-      libgl1-mesa-dev libegl1-mesa-dev libdrm-dev \
-      libgbm-dev libfreetype6-dev libxi-dev xorg \
-      libharfbuzz-dev libfontconfig1-dev
-
-    git clone --branch master --depth=1 https://github.com/SFML/SFML.git
-    cmake -S SFML -B SFML/build \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DSFML_BUILD_EXAMPLES=OFF \
-      -DBUILD_SHARED_LIBS=ON              # <-- build shared
-    sudo cmake --build SFML/build --target install
-    sudo ldconfig                         # <-- ensure /usr/local/lib is known
+name: 'Install common Linux dependencies'
+description: 'Common logic for Linux dependencies installation'
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends \
+          libxrandr-dev \
+          libxcursor-dev \
+          libudev-dev \
+          libopenal-dev \
+          libflac-dev \
+          libvorbis-dev \
+          libgl1-mesa-dev \
+          libegl1-mesa-dev \
+          libdrm-dev \
+          libgbm-dev \
+          libfreetype6-dev \
+          xorg
+      shell: bash
