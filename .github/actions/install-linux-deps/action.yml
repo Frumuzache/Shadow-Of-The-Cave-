@@ -26,9 +26,10 @@ runs:
       shell: bash
       run: |
         set -eux
-        # Rulăm update AICI și instalăm EXPLICIT componentele,
-        # OMIȚÂND metapachetul libsfml-dev pentru a evita conflicte.
+        # Adăugați update AICI pentru a reîmprospăta lista de pachete
         sudo apt-get update
+        
+        # Instalați explicit componentele
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
           libsfml-system-dev \
           libsfml-window-dev \
